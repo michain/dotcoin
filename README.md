@@ -9,7 +9,7 @@ A simple and integrity blockchain implementation in Golang
 * Tranaction 
 * UTXO 
 * Balance
-* MemPool
+* MemPool
 * Orphan 
 * DoubleSpend
 * ProofOfWork 
