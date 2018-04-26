@@ -1,0 +1,20 @@
+# DotCoin
+
+## version 0.08
+* Add Block MerkleRoot
+* Add peer - first code from https://github.com/uuchain/dotray
+* 2018-04-25 22:00
+
+## version 0.07
+* Add Server Mining
+* 2018-04-24 17:00
+
+## version 0.06
+* Add Server for begin rpc listen and mining
+* Add rpc server
+* Add loop mining
+* 2018-04-19 20:00
+
+## version 0.05
+* DotCoin print first BlockChain with GenesisBlock！
+* 2018-04-17 23:55
