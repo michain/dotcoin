@@ -1,11 +1,12 @@
 # dotcoin
 A simple and integrity blockchain implementation in Golang
-
+ 
+## Keys
 * Base block struct
 * NewBlock 
 * Merkle 
 * GenesisBlock
-* Tranaction 
+* Tranaction 
 * UTXO 
 * Balance
 * MemPool
