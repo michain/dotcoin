@@ -1,5 +1,8 @@
 # dotcoin
 A simple and integrity blockchain implementation in Golang
+
+## Tips
+Until now, the dotcoin node must have public ip.
  
 ## Keys
 * Base block struct
