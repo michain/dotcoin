@@ -1,8 +1,12 @@
 package protocol
 
-type Message struct{
+type netMessage struct{
 	AddrSource string
 	AddrFrom string
+}
+// Message is an interface that describes a message.
+type Message interface {
+	Command() string
 }
 
 const (

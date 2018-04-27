@@ -31,7 +31,7 @@ func NewInvVect(typ string, hash *chainhash.Hash) *InvVect {
 }
 
 type MsgInv struct {
-	Message
+	netMessage
 	InvList []*InvVect
 }
 

@@ -36,7 +36,7 @@ func (r *Request) handle(node *Node, conn net.Conn) (string, error) {
 		WriteConnRequest(conn, Request{
 			ID:      r.ID,
 			Command: NormalRequestReceived,
-			From:    node.nodeAddr,
+			From:    node.listenAddr,
 		})
 	case SyncBackupSeeds:
 		// the address of the requester
@@ -104,7 +104,7 @@ func (r *Request) handle(node *Node, conn net.Conn) (string, error) {
 
 		}
 
-		fmt.Printf("source seed: %s,current seed：%s,backup seeds：%v,downsteam：%v\n", node.sourceAddr, node.seedAddr, getSeedAddrs(node.seedBackup), node.downstreams)
+		fmt.Printf("source seed: %s,current seed：%s,backup seeds：%v,downsteam：%v\n", node.sourceAddr, node.seedAddr, getSeedAddrs(node.seedBackup), node.downstreamNodes)
 	case ServerPing:
 		// a downstream node sends its address to its seed node
 		addr, ok := r.Data.(string)
@@ -123,7 +123,7 @@ func (r *Request) handle(node *Node, conn net.Conn) (string, error) {
 
 			WriteConnRequest(conn, Request{
 				Command: ServerPong,
-				From:    node.nodeAddr,
+				From:    node.listenAddr,
 			})
 
 			return addr, nil

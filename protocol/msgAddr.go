@@ -7,7 +7,7 @@ import "fmt"
 const MaxAddrPerMsg = 1000
 
 type MsgAddr struct {
-	Message
+	netMessage
 	AddrList []string
 }
 

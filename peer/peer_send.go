@@ -22,7 +22,7 @@ func localSend(node *Node) {
 				ID:      now,
 				Command: NormalRequest,
 				Data:    raw,
-				From:    node.nodeAddr,
+				From:    node.listenAddr,
 			}
 
 			lock.Lock()
@@ -70,7 +70,7 @@ func routeSend(node *Node, r *Request) {
 		ID:      now,
 		Command: NormalRequest,
 		Data:    r.Data,
-		From:    node.nodeAddr,
+		From:    node.listenAddr,
 	}
 
 	lock.Lock()
