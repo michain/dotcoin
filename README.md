@@ -1,4 +1,4 @@
-# dotcoin ![dotcoin](https://github.com/michain/dotcoin/blob/master/server/html/img/dotcoin_64.png)
+# [![dotcoin](https://github.com/michain/dotcoin/blob/master/server/html/img/dotcoin_64.png)](https://github.com/michain/dotcoin)dotcoin
 A simple and integrity blockchain implementation in Golang
 
 ## Important!!! Now we are not yet completed all code.
