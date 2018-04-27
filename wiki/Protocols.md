@@ -22,7 +22,7 @@ Merkle树是散列的二叉树。在dotcoin中，Merkle树使用SHA-256算法，
 
 ```
 sha256(a) sha256(b) sha256(c)
-sha256(sha256(a)+sha256(b)) sha256(sha256(c)+sha256(c))
+sha256(sha256(a)+sha256(b)) sha256(sha256(c)+sha256(nil))
 sha256(sha256(sha256(a)+sha256(b))+sha256(sha256(c)+sha256(c)))
 ```
 每轮都将上一轮的结果两两相接后计算，若最后剩余单个元素则复制后计算。
