@@ -2,7 +2,6 @@ package server
 
 import (
 	"sync"
-	"syscall"
 )
 
 type AddrManager struct {

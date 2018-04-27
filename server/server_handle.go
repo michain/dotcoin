@@ -37,14 +37,14 @@ func (h *RpcHandler) SendTX(txPacket packet.TXPacket, result *packet.JsonResult)
 		return  err
 	}
 
-	if nodeAddress == knownNodes[0] {
-		for _, node := range knownNodes {
-			if node != nodeAddress && node != txPacket.AddFrom {
+	//if nodeAddress == knownNodes[0] {
+	//	for _, node := range knownNodes {
+	//		if node != nodeAddress && node != txPacket.AddFrom {
 				//TODO:send inventory to other server
 				//sendInv(node, "tx", [][]byte{tx.ID})
-			}
-		}
-	}
+	//		}
+	//	}
+	//}
 
 	*result = packet.JsonResult{0, "ok", tx.StringID()}
 	return nil

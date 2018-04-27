@@ -55,7 +55,7 @@ func runMining(bc *chain.Blockchain) (*chain.Block, error){
 			}
 		}
 
-		for _, node := range knownNodes {
+		for _, node := range currentAddrManager.GetAddresses() {
 			if node != nodeAddress {
 				//TODO: send inv?
 				hash := newBlock.Hash
