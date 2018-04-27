@@ -17,12 +17,12 @@ var txPool *mempool.TxPool
 var minerAddress string
 var currentWallets *wallet.WalletSet
 var currentBlockChain *chain.Blockchain
-var knownNodes = []string{"localhost:3000"}
 var currentAddrManager *AddrManager
 var nodeAddress string
 const(
 	rpcPort = ":2398" //2398 = 1983+0415 my birthday!
 	coinbaseReward = 10
+	knowAddr = "localhost:3000"
 )
 
 
@@ -127,6 +127,7 @@ func initServer(nodeID, minerAddr string, isGenesisNode bool) error{
 
 	//init addr manager
 	currentAddrManager = NewAddrManager()
+	currentAddrManager.AddAddress(knowAddr)
 
 
 

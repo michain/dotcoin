@@ -5,17 +5,14 @@ import (
 	"github.com/michain/dotcoin/protocol"
 )
 
-type serverPeer struct{
+type serverHandle struct{
 
 }
 
-// OnGetAddr is invoked when a peer receives a getaddr bitcoin message
-// and is used to provide the peer with known addresses from the address
-// manager.
-func (sp *serverPeer) OnGetAddr(p *peer.Peer, msg *protocol.MsgGetAddr) {
+// OnGetAddr is invoked when a peer receives a getaddr message
+func (sh *serverHandle) OnGetAddr(p *peer.Peer, msg *protocol.MsgGetAddr) {
 	// Get the current known addresses from the address manager.
-	// TODO use AddrManager replace slice
-	addrCache := knownNodes
+	addrCache := currentAddrManager.GetAddresses()
 
 	// Push the addresses.
 	p.PushAddrMsg(addrCache)

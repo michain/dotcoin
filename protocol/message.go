@@ -21,8 +21,6 @@ const (
 	CmdTx          = "tx"
 	CmdGetHeaders  = "getheaders"
 	CmdHeaders     = "headers"
-	CmdPing        = "ping"
-	CmdPong        = "pong"
 	CmdAlert       = "alert"
 	CmdMemPool     = "mempool"
 	CmdMerkleBlock = "merkleblock"
