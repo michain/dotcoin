@@ -1,7 +1,7 @@
 # dotcoin
 A simple and integrity blockchain implementation in Golang
 
-<font color='red'>Important!!! Now we are not yet completed all code.</font>
+## Important!!! Now we are not yet completed all code.
 
 ## Keys
 * Base block struct
