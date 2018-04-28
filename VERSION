@@ -1,5 +1,12 @@
 # DotCoin
 
+## version 0.09
+* Implement peer.MessageHandle's default mode: server.MessageHandler
+* Implement peer.Boardcast、peer.Single
+* Implement protocol: Msg
+* Add logx.DevDebubf、logx.DevPrintf
+* 2018-04-28 19:00
+
 ## version 0.08
 * Add Block MerkleRoot
 * Add peer - first code from https://github.com/uuchain/dotray

@@ -2,6 +2,8 @@ package peer
 
 import (
 	"time"
+	"net"
+	"github.com/michain/dotcoin/logx"
 )
 
 type Packet struct {
@@ -12,15 +14,60 @@ type Packet struct {
 var sendPackets = make(map[int64][]*Packet)
 var sendDatas = make(map[int64]Request)
 
-// the outer application send messages
-func localSend(node *Node) {
+// the outer application boardcast messages
+func localSingleSend(node *Node) {
 	for {
 		select {
-		case raw := <-node.send:
+		case raw := <-node.singleSend:
 			now := time.Now().UnixNano()
 			r := Request{
 				ID:      now,
-				Command: NormalRequest,
+				Command: SingleSendRequest,
+				Data:    raw.Data,
+				From:    node.listenAddr,
+			}
+
+			lock.Lock()
+			sendPackets[r.ID] = make([]*Packet, 0)
+			sendDatas[r.ID] = r
+			lock.Unlock()
+			n := 0
+			if raw.FromAddr != "" {
+				// send to the seed
+				conn := node.getConnByAddr(raw.FromAddr)
+				if conn == nil{
+					logx.Warn("localSingleSend getConnBtAddr is nil", raw.FromAddr)
+				}else{
+					WriteConnRequest(node.seedConn, r)
+					lock.Lock()
+					sendPackets[r.ID] = append(sendPackets[r.ID], &Packet{
+						Addr: node.seedAddr,
+					})
+					lock.Unlock()
+					n++
+				}
+			}
+
+			// nothing happend, do some sweeping work.
+			if n == 0 {
+				lock.Lock()
+				delete(sendPackets, r.ID)
+				delete(sendDatas, r.ID)
+				lock.Unlock()
+			}
+		}
+	}
+}
+
+// the outer application boardcast messages
+func localBoardcastSend(node *Node) {
+	for {
+		select {
+		case raw := <-node.boardcastSend:
+			now := time.Now().UnixNano()
+			r := Request{
+				ID:      now,
+				Command: BoardcastRequest,
 				Data:    raw,
 				From:    node.listenAddr,
 			}
@@ -32,7 +79,11 @@ func localSend(node *Node) {
 			n := 0
 			if node.seedAddr != "" {
 				// send to the seed
-				WriteConnRequest(node.seedConn, r)
+				err := WriteConnRequest(node.seedConn, r)
+				logx.DevDebugf("localBoardcastSend send to seed %v %v", node.seedAddr, err)
+				if err!=nil{
+					logx.Errorf("localBoardcastSend send to seed error %v %v", node.seedAddr, err)
+				}
 				lock.Lock()
 				sendPackets[r.ID] = append(sendPackets[r.ID], &Packet{
 					Addr: node.seedAddr,
@@ -43,7 +94,11 @@ func localSend(node *Node) {
 
 			// send to the downstream
 			for addr, conn := range node.downstreamNodes {
-				WriteConnRequest(conn, r)
+				err := WriteConnRequest(conn, r)
+				logx.DevDebugf("localBoardcastSend downstreamNodes WriteConnRequest %v %v", addr, err)
+				if err!=nil{
+					logx.Errorf("localBoardcastSend send to downstreamNode error %v %v", addr, err)
+				}
 				lock.Lock()
 				sendPackets[r.ID] = append(sendPackets[r.ID], &Packet{
 					Addr: addr,
@@ -68,7 +123,7 @@ func routeSend(node *Node, r *Request) {
 	now := time.Now().UnixNano()
 	newReq := Request{
 		ID:      now,
-		Command: NormalRequest,
+		Command: BoardcastRequest,
 		Data:    r.Data,
 		From:    node.listenAddr,
 	}
@@ -111,9 +166,6 @@ func routeSend(node *Node, r *Request) {
 		delete(sendDatas, newReq.ID)
 		lock.Unlock()
 	}
-
-	// send to the outer application
-	node.recv <- r
 }
 
 func deleteResend(rid int64, from string) {
@@ -188,6 +240,16 @@ func resend(node *Node) {
 
 		time.Sleep(10 * time.Second)
 	}
+}
+
+// send normal request ack message
+func sendNormalRequestReceived(r *Request, node *Node, conn net.Conn){
+	// response with ack
+	WriteConnRequest(conn, Request{
+		ID:      r.ID,
+		Command: RequestReceived,
+		From:    node.listenAddr,
+	})
 }
 
 

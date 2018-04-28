@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"github.com/michain/dotcoin/logx"
 )
 
 // Request 节点之间交换的数据结构
@@ -15,29 +16,32 @@ type Request struct {
 }
 
 const (
-	NormalRequest         = 0 // outer application's data
-	NormalRequestReceived = 1 // ack
-	ServerPing            = 2 // ping to the seed
-	ServerPong            = 3 // pong to the ping
-	BackupSeeds           = 4 // return the backup seeds
-	SyncBackupSeeds       = 5 // query for the backup seeds
+	BoardcastRequest         = 0 // outer application's data
+	SingleSendRequest 		 = 1
+	ServerPing            	 = 2 // ping to the seed
+	ServerPong            	 = 3 // pong to the ping
+	SyncBackupSeeds       	 = 4 // query for the backup seeds
+	BackupSeeds           	 = 5 // return the backup seeds
+	RequestReceived 		 = 6 // ack
 )
 
 func (r *Request) handle(node *Node, conn net.Conn) (string, error) {
 	switch r.Command {
-	case NormalRequestReceived:
+	case RequestReceived:
 		// delete the message from resend queue
 		deleteResend(r.ID, r.From)
-	case NormalRequest:
+	case BoardcastRequest:
+		logx.DevDebugf("peer.BoardcastRequest [%v] => [%v] %v", r.From, node.listenAddr, *r)
 		// route the received message to other nodes and outer application
 		routeSend(node, r)
+		// send to the outer application
+		node.recv <- r
 
-		// response with ack
-		WriteConnRequest(conn, Request{
-			ID:      r.ID,
-			Command: NormalRequestReceived,
-			From:    node.listenAddr,
-		})
+		//send ack message
+		sendNormalRequestReceived(r, node, conn)
+	case SingleSendRequest:
+		//send ack message
+		sendNormalRequestReceived(r, node, conn)
 	case SyncBackupSeeds:
 		// the address of the requester
 		fromAddr := r.Data.(string)
@@ -104,8 +108,9 @@ func (r *Request) handle(node *Node, conn net.Conn) (string, error) {
 
 		}
 
-		fmt.Printf("source seed: %s,current seed：%s,backup seeds：%v,downsteam：%v\n", node.sourceAddr, node.seedAddr, getSeedAddrs(node.seedBackup), node.downstreamNodes)
+		logx.Debugf("peer.BackupSeeds source: %s,current：%s,backup：%v,downsteam：%v", node.sourceAddr, node.seedAddr, getSeedAddrs(node.seedBackup), node.downstreamNodes)
 	case ServerPing:
+		logx.DevDebugf("peer.ServerPing [%v] => [%v] %v", r.From, node.listenAddr, *r)
 		// a downstream node sends its address to its seed node
 		addr, ok := r.Data.(string)
 		if ok {
@@ -130,6 +135,7 @@ func (r *Request) handle(node *Node, conn net.Conn) (string, error) {
 		}
 
 	case ServerPong:
+		logx.DevDebugf("peer.seedPingPong [%v] => [%v] %v", r.From, node.listenAddr, *r)
 		node.seedPingPong = true
 	default:
 		fmt.Println("unrecognized message type：", r.Command)

@@ -46,7 +46,7 @@ func (msg *MsgAddr) Command() string {
 
 // NewMsgAddr returns a new addr message
 func NewMsgAddr() *MsgAddr {
-	return &MsgAddr{
+	return  &MsgAddr{
 		AddrList: make([]string, 0, MaxAddrPerMsg),
 	}
 }

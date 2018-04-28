@@ -4,43 +4,72 @@ import (
 	"github.com/michain/dotcoin/config/chainhash"
 	"github.com/michain/dotcoin/protocol"
 	"math/rand"
+	"github.com/labstack/gommon/log"
+	"github.com/michain/dotcoin/logx"
+	"reflect"
 )
 
 // Peer extends the node to maintain state shared by the server
 type Peer struct {
 	node *Node
-	sendQueue chan interface{}
-	receiveQueue chan interface{}
-	messageHandle *MessageHandle
+	boardcastQueue chan interface{}
+	singleQueue chan *SingleRequest
+	receiveQueue chan *Request
+	messageHandler MessageHandle
 	continueHash   *chainhash.Hash
 }
 
 
-func StartPeer(listenAddr, seedAddr string) (*Peer, error){
+func NewPeer(listenAddr, seedAddr string, msgHandler MessageHandle) *Peer{
 	p := new(Peer)
-	p.sendQueue = make(chan interface{}, 1)
-	p.receiveQueue = make(chan interface{}, 1)
-	p.node = NewNode(listenAddr, seedAddr, p.sendQueue, p.receiveQueue)
+	p.singleQueue = make(chan *SingleRequest, 10)
+	p.boardcastQueue = make(chan interface{}, 10)
+	p.receiveQueue = make(chan *Request, 10)
+	p.messageHandler = msgHandler
+	p.node = NewNode(listenAddr, seedAddr, p.boardcastQueue, p.receiveQueue, p.singleQueue)
+	return p
+}
 
-
-	return p, nil
+func (p *Peer) StartListen() error{
+	go p.ReciveMessage()
+	return p.node.startNode()
 }
 
 
-// SendData send message to all downstream nodes and seed node
-func (p *Peer) SendData(msg protocol.Message){
-	p.sendQueue <- msg
+// GetListenAddr get peer listen addr
+func (p *Peer) GetListenAddr() string{
+	return p.node.listenAddr
+}
+
+// BroadcastMessage send message to all downstream nodes and seed node
+func (p *Peer) SendSingleMessage(msg protocol.Message){
+	p.singleQueue <- &SingleRequest{
+		Data:msg,
+		FromAddr:msg.GetFromAddr(),
+	}
+}
+
+// BroadcastMessage send message to all downstream nodes and seed node
+func (p *Peer) BroadcastMessage(msg protocol.Message){
+	p.boardcastQueue <- msg
 }
 
 // ReciveMessage recive message from net node
-func (p *Peer) ReciveMessage() protocol.Message{
-	var msgData interface{}
+func (p *Peer) ReciveMessage() {
 	for {
-		msgData =<- p.receiveQueue
-		if msg, ok := msgData.(protocol.Message); !ok {
-			//TODO log error msg
-		}else{
-			return msg
+		req := <-p.receiveQueue
+		logx.DevPrintf("Received msgData type:%v", reflect.TypeOf(req.Data))
+		if p.messageHandler == nil {
+			log.Error("Peer's messageHandler is nil!")
+			break
+		}
+		switch msg :=  req.Data.(type) {
+		case protocol.MsgAddr:
+			msg.AddrFrom = req.From
+			p.messageHandler.OnAddr(p, &msg)
+		default:
+			logx.Errorf("Received unhandled message of type %v "+
+				"from %v [%v]", reflect.TypeOf(req.Data), p, msg)
 		}
 	}
 }
@@ -69,6 +98,9 @@ func (p *Peer) PushAddrMsg(addresses []string) error {
 		msg.AddrList = msg.AddrList[:protocol.MaxAddrPerMsg]
 	}
 
-	p.SendData(msg)
+	//set single send
+	msg.SetNeedBroadcast(false)
+
+	p.SendSingleMessage(msg)
 	return nil
 }

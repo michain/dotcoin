@@ -7,6 +7,9 @@ import (
 	"github.com/michain/dotcoin/chain"
 	"bytes"
 	"log"
+	"time"
+	"github.com/michain/dotcoin/protocol"
+	"github.com/michain/dotcoin/peer"
 )
 
 const nodeID = "3eb456d086f34118925793496cd20945"
@@ -20,6 +23,80 @@ func init(){
 		fmt.Println(err)
 		os.Exit(-1)
 	}
+}
+
+
+func Test_StartPeer(t *testing.T){
+	var seed = "127.0.0.1:2398"
+	var pnode1 = "127.0.0.1:2391"
+	var pnode1_1 = "127.0.0.1:2392"
+	var pnode2 = "127.0.0.1:2491"
+	var pnode2_1 = "127.0.0.1:2492"
+
+	go func() {
+		p := peer.NewPeer(seed, "", NewMessageHandler())
+
+		err := p.StartListen()
+		if err != nil {
+			t.Error("Seed Peer start error", err)
+		} else {
+			t.Log("Seed Peer start success")
+		}
+	}()
+
+	go func() {
+		p := peer.NewPeer(pnode1, seed, NewMessageHandler())
+		err := p.StartListen()
+		if err != nil {
+			t.Error("pnode1 Peer start error", err)
+		} else {
+			t.Log("pnode1 Peer start success")
+		}
+	}()
+
+	go func() {
+		p := peer.NewPeer(pnode1_1, pnode1, NewMessageHandler())
+		err := p.StartListen()
+		if err != nil {
+			t.Error("pnode1_1 Peer start error", err)
+		} else {
+			t.Log("pnode1_1 Peer start success")
+		}
+	}()
+
+
+	go func() {
+		p := peer.NewPeer(pnode2, seed, NewMessageHandler())
+		err := p.StartListen()
+		if err != nil {
+			t.Error("pnode2 Peer start error", err)
+		} else {
+			t.Log("pnode2 Peer start success")
+		}
+	}()
+
+	var p_2_1 *peer.Peer
+	go func() {
+		var err error
+		p_2_1 = peer.NewPeer(pnode2_1, pnode2, NewMessageHandler())
+		err = p_2_1.StartListen()
+		if err != nil {
+			t.Error("pnode2_1 Peer start error", err)
+		} else {
+			t.Log("pnode2_1 Peer start success")
+		}
+	}()
+
+	time.Sleep(time.Second * 3)
+	msg := protocol.NewMsgAddr()
+	msg.AddrList = []string{"127.0.0.1:1", "127.0.0.1:2", "127.0.0.1:3"}
+	p_2_1.BroadcastMessage(msg)
+
+	for{
+		select{}
+	}
+
+
 }
 
 func Test_runMining(t *testing.T){

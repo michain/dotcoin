@@ -9,7 +9,6 @@ import (
 	"errors"
 )
 
-var currentNode *Node
 var lock = &sync.Mutex{}
 var reqID int64
 
@@ -51,8 +50,9 @@ type(
 		downstreamNodes map[string]net.Conn
 
 		// outer application channels
-		send chan interface{}
-		recv chan interface{}
+		boardcastSend chan interface{}
+		singleSend chan *SingleRequest
+		recv chan *Request
 	}
 
 	// Seed structure
@@ -60,15 +60,21 @@ type(
 	addr  string
 	retry int
 	}
+
+	SingleRequest struct{
+		Data interface{}
+		FromAddr string
+	}
 )
 
 // NewNode return new &node with laddr, saddr, send, recv
-func NewNode(laddr, saddr string, send, recv chan interface{}) *Node{
+func NewNode(laddr, saddr string, boardcast chan interface{}, recv chan *Request, single chan *SingleRequest) *Node{
 	return &Node{
 		listenAddr:  laddr,
 		sourceAddr:  saddr,
 		downstreamNodes: make(map[string]net.Conn),
-		send:        send,
+		boardcastSend:        boardcast,
+		singleSend:			single,
 		recv:        recv,
 	}
 }
@@ -101,34 +107,39 @@ func (node *Node) startNode() error {
 				fmt.Println("accept downstream node error：", err)
 				continue
 			}
-			go currentNode.receiveMessage(conn, false, false)
+			go node.receiveMessage(conn, false, false)
 		}
 	}()
 
 	// receive outer application's message,and route to the seed node and the downstream nodes
-	go localSend(currentNode)
+	go localBoardcastSend(node)
+
+	// receive outer application's message,and response from node
+	go localSingleSend(node)
 
 	// resend the unsent messages(these messages didn't receive a matched ack from target node)
-	go resend(currentNode)
+	go resend(node)
 
 	// the main logic of seed manage
 	if node.sourceAddr != "" {
-		// start to loop ping with the seed
-		// when ping failed a few times, we need to connect to another seed node
-		go currentNode.loopPing()
 
-		err := currentNode.connectSeed(node.sourceAddr)
+		err := node.connectSeed(node.sourceAddr)
 		if err != nil {
 			fmt.Printf("failed to connecto the seed%s：%v\n", node.sourceAddr, err)
 			return err
 		}
 
+		// start to loop ping with the seed
+		// when ping failed a few times, we need to connect to another seed node
+		go node.loopPing()
+
+
 		// start to sync the backup seed from current seed
 		//the backup seeds are those nodes who directly connected with the current seed
-		go currentNode.syncBackupSeed()
+		go node.syncBackupSeed()
 
 		// start to receive messages from the current seed
-		currentNode.receiveMessage(currentNode.seedConn, true, false)
+		node.receiveMessage(node.seedConn, true, false)
 
 	SourceSeedTry:
 	// although we disconnected with the source seed
@@ -139,12 +150,12 @@ func (node *Node) startNode() error {
 				break
 			}
 
-			err := currentNode.connectSeed(node.sourceAddr)
+			err := node.connectSeed(node.sourceAddr)
 			if err != nil {
 				n++
 				goto CONTINUE
 			}
-			currentNode.receiveMessage(currentNode.seedConn, true, false)
+			node.receiveMessage(node.seedConn, true, false)
 			//when successfully connected, the counter will be reset to 0
 			n = 0
 		CONTINUE:
@@ -153,7 +164,7 @@ func (node *Node) startNode() error {
 
 		// after retry several times with the source seed,now we want connect with our backup seeds
 		for {
-			if len(currentNode.seedBackup) <= 0 {
+			if len(node.seedBackup) <= 0 {
 				// if there is no backup seed,we will go back to the source seed
 				fmt.Printf("no backup seed exist now\n")
 				break
@@ -168,7 +179,7 @@ func (node *Node) startNode() error {
 			// larger one, this is why we will go back to retry the source seed after some time.
 
 			//and this stepBack action only happend when we has connected to backup seeds
-			stepBack := currentNode.connectBackSeeds()
+			stepBack := node.connectBackSeeds()
 			if stepBack {
 				fmt.Println("step back to the source seed")
 				goto SourceSeedTry
@@ -321,9 +332,14 @@ func (node *Node) loopPing() {
 			r := &Request{
 				Command: ServerPing,
 				Data:    node.listenAddr,
+				From:	 node.listenAddr,
 			}
-			WriteConnRequest(node.seedConn, r)
-			pingNum++
+			err := WriteConnRequest(node.seedConn, r)
+			if err!=nil{
+				pingNum++
+			}else{
+				pingNum = 0
+			}
 		}
 		time.Sleep(pingInterval * time.Second)
 	}

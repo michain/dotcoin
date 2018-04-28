@@ -1,12 +1,30 @@
 package protocol
 
+
 type netMessage struct{
 	AddrSource string
 	AddrFrom string
+	needBroadcast bool
 }
+
+func (m *netMessage) GetFromAddr() string{
+	return m.AddrFrom
+}
+
+func (m *netMessage) NeedBroadcast() bool{
+	return m.needBroadcast
+}
+
+func (m *netMessage) SetNeedBroadcast(flag bool){
+	m.needBroadcast = flag
+}
+
 // Message is an interface that describes a message.
 type Message interface {
 	Command() string
+	GetFromAddr() string
+	NeedBroadcast() bool
+	SetNeedBroadcast(flag bool)
 }
 
 const (
