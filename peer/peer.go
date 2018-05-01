@@ -58,7 +58,7 @@ func (p *Peer) BroadcastMessage(msg protocol.Message){
 func (p *Peer) ReciveMessage() {
 	for {
 		req := <-p.receiveQueue
-		logx.DevPrintf("Received msgData type:%v", reflect.TypeOf(req.Data))
+		//logx.DevPrintf("Received msgData type:%v", reflect.TypeOf(req.Data))
 		if p.messageHandler == nil {
 			log.Error("Peer's messageHandler is nil!")
 			break
@@ -67,6 +67,9 @@ func (p *Peer) ReciveMessage() {
 		case protocol.MsgAddr:
 			msg.AddrFrom = req.From
 			p.messageHandler.OnAddr(p, &msg)
+		case protocol.MsgInv:
+			msg.AddrFrom = req.From
+			p.messageHandler.OnInv(p, &msg)
 		default:
 			logx.Errorf("Received unhandled message of type %v "+
 				"from %v [%v]", reflect.TypeOf(req.Data), p, msg)

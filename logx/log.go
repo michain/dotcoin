@@ -8,6 +8,7 @@ func Tracef(format string, i ...interface{}) {
 
 
 func DevDebugf(format string, i ...interface{}) {
+	return
 	fmt.Println("DevDEBUG ", fmt.Sprintf(format, i...))
 }
 

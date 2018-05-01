@@ -25,13 +25,14 @@ func (mh *MessageHandler) OnGetAddr(p *peer.Peer, msg *protocol.MsgGetAddr) {
 
 // OnAddr is invoked when a peer receives an addr message.
 func (mh *MessageHandler) OnAddr(p *peer.Peer, msg *protocol.MsgAddr) {
+	logx.DevPrintf("MessageHandler OnAddr peer:%v from:%v peers:%v", p.GetListenAddr(), msg.AddrFrom, currentAddrManager.GetAddresses())
 	for _, addr:=range msg.AddrList{
 		currentAddrManager.AddAddress(addr)
 	}
-	logx.DevPrintf("MessageHandler OnAddr peer:%v from:%v peers:%v", p.GetListenAddr(), msg.AddrFrom, currentAddrManager.GetAddresses())
 }
 
 // OnInv is invoked when a peer receives an inv message.
 func (mh *MessageHandler) OnInv(p *peer.Peer, msg *protocol.MsgInv) {
-	logx.Debugf("messageHandler OnInv [%v]", msg)
+	logx.DevPrintf("messageHandler OnInv peer:%v from:%v invs:%+v", p.GetListenAddr(), msg.AddrFrom, msg.InvList[0])
+	//check existing
 }

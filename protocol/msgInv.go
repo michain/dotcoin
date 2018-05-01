@@ -17,14 +17,14 @@ const(
 	MaxInvPerMsg = 50000
 )
 
-type InvVect struct {
+type InvInfo struct {
 	Type string        // Type of data
 	Hash chainhash.Hash // Hash of the data
 }
 
-// NewInvVect returns a new InvVect using the provided type and hash.
-func NewInvVect(typ string, hash *chainhash.Hash) *InvVect {
-	return &InvVect{
+// NewInvInfo returns a new InvVect using the provided type and hash.
+func NewInvInfo(typ string, hash *chainhash.Hash) *InvInfo {
+	return &InvInfo{
 		Type: typ,
 		Hash: *hash,
 	}
@@ -32,15 +32,19 @@ func NewInvVect(typ string, hash *chainhash.Hash) *InvVect {
 
 type MsgInv struct {
 	netMessage
-	InvList []*InvVect
+	InvList []*InvInfo
 }
 
-// AddInvVect adds an inventory vector to the message.
-func (msg *MsgInv) AddInvVect(iv *InvVect) error {
+func NewMsgInv() *MsgInv{
+	return &MsgInv{}
+}
+
+// AddInvVect adds an inventory info to the message.
+func (msg *MsgInv) AddInvInfo(iv *InvInfo) error {
 	if len(msg.InvList)+1 > MaxInvPerMsg {
-		str := fmt.Sprintf("too many invvect in message [max %v]",
+		str := fmt.Sprintf("too many invinfo in message [max %v]",
 			MaxInvPerMsg)
-		return messageError("MsgInv.AddInvVect", str)
+		return messageError("MsgInv.AddInvInfo", str)
 	}
 
 	msg.InvList = append(msg.InvList, iv)

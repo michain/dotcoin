@@ -10,6 +10,7 @@ import (
 	"time"
 	"github.com/michain/dotcoin/protocol"
 	"github.com/michain/dotcoin/peer"
+	"github.com/michain/dotcoin/config/chainhash"
 )
 
 const nodeID = "3eb456d086f34118925793496cd20945"
@@ -87,10 +88,22 @@ func Test_StartPeer(t *testing.T){
 		}
 	}()
 
-	time.Sleep(time.Second * 3)
-	msg := protocol.NewMsgAddr()
-	msg.AddrList = []string{"127.0.0.1:1", "127.0.0.1:2", "127.0.0.1:3"}
-	p_2_1.BroadcastMessage(msg)
+	go func(){
+		time.Sleep(time.Second * 3)
+		msg := protocol.NewMsgAddr()
+		msg.AddrList = []string{"127.0.0.1:1", "127.0.0.1:2", "127.0.0.1:3"}
+		p_2_1.BroadcastMessage(msg)
+	}()
+
+	go func(){
+		time.Sleep(time.Second * 6)
+		iv := protocol.NewInvInfo(protocol.InvTypeTx, chainhash.ZeroHash())
+		msg := protocol.NewMsgInv()
+		msg.AddInvInfo(iv)
+
+		p_2_1.BroadcastMessage(msg)
+	}()
+
 
 	for{
 		select{}
