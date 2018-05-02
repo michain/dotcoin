@@ -23,11 +23,11 @@ func LoopMining(bc *chain.Blockchain){
 // RunMining run mine block with mempool
 func runMining(bc *chain.Blockchain) (*chain.Block, error){
 	var newBlock *chain.Block
-	if txPool.Count() >= 1 && len(minerAddress) > 0 {
+	if curTXMemPool.Count() >= 1 && len(minerAddress) > 0 {
 	MineTransactions:
 		var txs []*chain.Transaction
 
-		for _, tx := range txPool.TxDescs() {
+		for _, tx := range curTXMemPool.TxDescs() {
 			if bc.VerifyTransaction(tx) {
 				txs = append(txs, tx)
 			}
@@ -51,12 +51,12 @@ func runMining(bc *chain.Blockchain) (*chain.Block, error){
 
 		for _, tx := range txs {
 			if !tx.IsCoinBase() {
-				txPool.RemoveTransaction(tx, false)
+				curTXMemPool.RemoveTransaction(tx, false)
 			}
 		}
 
-		for _, node := range currentAddrManager.GetAddresses() {
-			if node != nodeAddress {
+		for _, node := range curAddrManager.GetAddresses() {
+			if node != listenAddress {
 				//TODO: send inv?
 				hash := newBlock.Hash
 				fmt.Println("sendInv block", hash)
@@ -64,7 +64,7 @@ func runMining(bc *chain.Blockchain) (*chain.Block, error){
 			}
 		}
 
-		if txPool.Count() > 0 {
+		if curTXMemPool.Count() > 0 {
 			goto MineTransactions
 		}
 	}else{

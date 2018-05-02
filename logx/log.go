@@ -2,6 +2,11 @@ package logx
 
 import "fmt"
 
+func Trace(i ...interface{}) {
+	fmt.Println("TRACE ", i[0:])
+}
+
+
 func Tracef(format string, i ...interface{}) {
 	fmt.Println("TRACE ", fmt.Sprintf(format, i...))
 }

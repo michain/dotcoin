@@ -137,6 +137,16 @@ func (bc *Blockchain) AddBlock(block *Block) {
 	}
 }
 
+// HaveBlock check block hash exists
+func (bc *Blockchain) HaveBlock(blockHash []byte) (bool, error){
+	b, err:=bc.GetBlock(blockHash)
+	if err != nil{
+		return false, err
+	}else{
+		return b != nil, nil
+	}
+}
+
 // GetBlock finds a block by its hash and returns it
 func (bc *Blockchain) GetBlock(blockHash []byte) (*Block, error) {
 	var block *Block
@@ -253,21 +263,21 @@ func (bc *Blockchain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey)
 		if err != nil {
 			log.Panic(err)
 		}
-		prevTXs[prevTX.StringID()] = prevTX
+		prevTXs[prevTX.StringID()] = *prevTX
 	}
 
 	tx.Sign(privKey, prevTXs)
 }
 
 // FindTransaction finds a transaction by its ID
-func (bc *Blockchain) FindTransaction(ID *chainhash.Hash) (Transaction, error) {
+func (bc *Blockchain) FindTransaction(ID *chainhash.Hash) (*Transaction, error) {
 	bci := bc.Iterator()
 
 	for {
 		block := bci.Next()
 		for _, tx := range block.Transactions {
 			if tx.ID.IsEqual(ID){
-				return *tx, nil
+				return tx, nil
 			}
 		}
 
@@ -276,7 +286,7 @@ func (bc *Blockchain) FindTransaction(ID *chainhash.Hash) (Transaction, error) {
 		}
 	}
 
-	return Transaction{}, errors.New("Transaction is not found")
+	return nil, ErrorNotFound
 }
 
 // VerifyTransaction verifies transaction input signatures
@@ -291,7 +301,7 @@ func (bc *Blockchain) VerifyTransaction(tx *Transaction) bool {
 		if err != nil {
 			log.Panic(err)
 		}
-		prevTXs[prevTX.StringID()] = prevTX
+		prevTXs[prevTX.StringID()] = *prevTX
 	}
 
 	return tx.Verify(prevTXs)

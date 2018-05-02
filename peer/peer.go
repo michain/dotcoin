@@ -4,7 +4,6 @@ import (
 	"github.com/michain/dotcoin/config/chainhash"
 	"github.com/michain/dotcoin/protocol"
 	"math/rand"
-	"github.com/labstack/gommon/log"
 	"github.com/michain/dotcoin/logx"
 	"reflect"
 )
@@ -60,16 +59,16 @@ func (p *Peer) ReciveMessage() {
 		req := <-p.receiveQueue
 		//logx.DevPrintf("Received msgData type:%v", reflect.TypeOf(req.Data))
 		if p.messageHandler == nil {
-			log.Error("Peer's messageHandler is nil!")
+			logx.Error("Peer's messageHandler is nil!")
 			break
 		}
 		switch msg :=  req.Data.(type) {
 		case protocol.MsgAddr:
 			msg.AddrFrom = req.From
-			p.messageHandler.OnAddr(p, &msg)
+			p.messageHandler.OnAddr(&msg)
 		case protocol.MsgInv:
 			msg.AddrFrom = req.From
-			p.messageHandler.OnInv(p, &msg)
+			p.messageHandler.OnInv(&msg)
 		default:
 			logx.Errorf("Received unhandled message of type %v "+
 				"from %v [%v]", reflect.TypeOf(req.Data), p, msg)

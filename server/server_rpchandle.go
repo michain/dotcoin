@@ -25,14 +25,14 @@ func (h *RpcHandler) SendTX(txPacket packet.TXPacket, result *packet.JsonResult)
 	if !wallet.ValidateAddress(txPacket.To){
 		return errors.New("validate [to] address error")
 	}
-	fromWallet := currentWallets.GetWallet(txPacket.From)
+	fromWallet := curWallets.GetWallet(txPacket.From)
 	if fromWallet  == nil{
 		return errors.New("not exists [from] address")
 	}
 	tx := chain.NewUTXOTransaction(fromWallet, txPacket.To, txPacket.Money, h.bc.GetUTXOSet())
 
 	//add TX to mempool
-	_, err := txPool.MaybeAcceptTransaction(tx, true, true)
+	_, err := curTXMemPool.MaybeAcceptTransaction(tx, true, true)
 	if err != nil{
 		return  err
 	}
@@ -52,7 +52,7 @@ func (h *RpcHandler) SendTX(txPacket packet.TXPacket, result *packet.JsonResult)
 
 // CreateWallet 创建账户
 func (h *RpcHandler) CreateWallet(name string, result *packet.JsonResult) error {
-	newWallet := currentWallets.CreateWallet()
+	newWallet := curWallets.CreateWallet()
 
 	*result = packet.JsonResult{RetCode:0, RetMsg:"ok", Message:newWallet.GetStringAddress()}
 	fmt.Println(result)
@@ -60,7 +60,7 @@ func (h *RpcHandler) CreateWallet(name string, result *packet.JsonResult) error 
 }
 
 func (h *RpcHandler) ListAddress(tag string, result *packet.JsonResult) error {
-	*result = packet.JsonResult{RetCode:0, RetMsg:"ok", Message:packet.WalletListPacket{currentWallets.GetAddresses()}}
+	*result = packet.JsonResult{RetCode:0, RetMsg:"ok", Message:packet.WalletListPacket{curWallets.GetAddresses()}}
 	fmt.Println(result)
 	return nil
 }

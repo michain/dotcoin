@@ -11,19 +11,32 @@ import (
 	"github.com/michain/dotcoin/chain"
 	"github.com/michain/dotcoin/mempool"
 	"github.com/pkg/errors"
+	"github.com/michain/dotcoin/sync"
+	"github.com/michain/dotcoin/logx"
+	"github.com/michain/dotcoin/peer"
 )
 
-var txPool *mempool.TxPool
+var curTXMemPool *mempool.TxPool
+var curWallets *wallet.WalletSet
+var curBlockChain *chain.Blockchain
+var curAddrManager *AddrManager
+var curSyncManager *sync.SyncManager
+var curPeer *peer.Peer
 var minerAddress string
-var currentWallets *wallet.WalletSet
-var currentBlockChain *chain.Blockchain
-var currentAddrManager *AddrManager
-var nodeAddress string
+var listenAddress string
+var seedAddrs []string
+
 const(
-	rpcPort = ":2398" //2398 = 1983+0415 my birthday!
+	rpcPort = ":12398" //2398 = 1983+0415 my birthday!
+	tcpPort = ":2398"
 	coinbaseReward = 10
-	knowAddr = "localhost:3000"
+	knowAddr = "localhost:2398"
 )
+
+func init(){
+	seedAddrs = []string{knowAddr}
+	listenAddress = tcpPort
+}
 
 
 func listenRPCServer(bc *chain.Blockchain) {
@@ -50,13 +63,22 @@ func listenRPCServer(bc *chain.Blockchain) {
 	}
 }
 
+func listenPeer(){
+	if len(seedAddrs) <= 0{
+		log.Fatalf("listenPeer error: seedAddrs is nil")
+	}
+	logx.Debugf("listenPeer begin listen:%v seed:%v", tcpPort, seedAddrs[0])
+	curPeer = peer.NewPeer(tcpPort, seedAddrs[0], NewMessageHandler(curPeer))
+	curPeer.StartListen()
+}
+
 // initServer init server
 func initServer(nodeID, minerAddr string, isGenesisNode bool) error{
-	nodeAddress = fmt.Sprintf("localhost:%s", nodeID)
+	listenAddress = fmt.Sprintf("localhost:%s", nodeID)
 	var err error
 	isFirstInit := false
 
-	currentBlockChain, err = chain.LoadBlockChain(nodeID)
+	curBlockChain, err = chain.LoadBlockChain(nodeID)
 	if err == chain.ErrorBlockChainNotFount{
 		isFirstInit = true
 	}
@@ -67,7 +89,7 @@ func initServer(nodeID, minerAddr string, isGenesisNode bool) error{
 
 
 	//load or create miner wallet
-	currentWallets, err = wallet.LoadWallets(nodeID)
+	curWallets, err = wallet.LoadWallets(nodeID)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -75,8 +97,8 @@ func initServer(nodeID, minerAddr string, isGenesisNode bool) error{
 
 	//ignore config miner address when genesis and first init
 	if isGenesisNode && isFirstInit{
-		mw := currentWallets.CreateWallet()
-		err = currentWallets.SetMinerAddress(mw.GetStringAddress())
+		mw := curWallets.CreateWallet()
+		err = curWallets.SetMinerAddress(mw.GetStringAddress())
 		if err != nil{
 			fmt.Println(err)
 			return err
@@ -91,13 +113,13 @@ func initServer(nodeID, minerAddr string, isGenesisNode bool) error{
 			return errors.New(msg)
 		}else{
 			minerAddress = minerAddr
-			currentWallets.SetMinerAddress(minerAddress)
+			curWallets.SetMinerAddress(minerAddress)
 		}
 	}else{
-		minerAddress = currentWallets.GetMinerAddress()
+		minerAddress = curWallets.GetMinerAddress()
 		if minerAddress == "" {
-			mw := currentWallets.CreateWallet()
-			err = currentWallets.SetMinerAddress(mw.GetStringAddress())
+			mw := curWallets.CreateWallet()
+			err = curWallets.SetMinerAddress(mw.GetStringAddress())
 			if err != nil{
 				fmt.Println(err)
 				return err
@@ -115,25 +137,35 @@ func initServer(nodeID, minerAddr string, isGenesisNode bool) error{
 
 	//load and check blockchain
 	if isGenesisNode && isFirstInit{
-		currentBlockChain = chain.CreateBlockchain(minerAddress, nodeID)
+		curBlockChain = chain.CreateBlockchain(minerAddress, nodeID)
 	}
 
-	if currentBlockChain == nil{
+	if curBlockChain == nil{
 		msg := "Blockchain Load error "
-		fmt.Println(msg)
 		return errors.New(msg)
 	}
 
 
 	//init addr manager
-	currentAddrManager = NewAddrManager()
-	currentAddrManager.AddAddress(knowAddr)
+	curAddrManager = NewAddrManager()
+	curAddrManager.AddAddress(knowAddr)
 
+	//init sync manager
+	curSyncManager, err = sync.New(&sync.Config{
+		Chain : curBlockChain,
+		TxMemPool:curTXMemPool,
+		MaxPeers:MaxPeerNum,
+		Peer:curPeer,
+	})
+	if err!= nil{
+		return err
+	}
+	go curSyncManager.Start()
 
 
 	//TODO:save to db?
 	//init mempool
-	txPool = mempool.New(currentBlockChain)
+	curTXMemPool = mempool.New(curBlockChain)
 	return nil
 }
 
@@ -147,14 +179,16 @@ func StartServer(nodeID, minerAddr string, isGenesisNode bool) error{
 	}
 
 	//TODO:check config
-	go LoopMining(currentBlockChain)
+	go LoopMining(curBlockChain)
 
 	//TODO:sync this node version info
 	//TODO:sync block data
 
+	//start peer
+	go listenPeer()
 
 	//TODO:check config
-	listenRPCServer(currentBlockChain)
+	listenRPCServer(curBlockChain)
 
 	return nil
 

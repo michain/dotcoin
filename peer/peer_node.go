@@ -231,7 +231,7 @@ func (node *Node) receiveMessage(conn net.Conn, isSeed bool, needStepBack bool) 
 			}
 			break
 		}
-		a, err := r.handle(node, conn)
+		a, err := r.handleConn(node, conn)
 		if err != nil {
 			fmt.Println("handle message error：", err)
 			break

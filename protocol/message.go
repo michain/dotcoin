@@ -1,6 +1,5 @@
 package protocol
 
-
 type netMessage struct{
 	AddrSource string
 	AddrFrom string
