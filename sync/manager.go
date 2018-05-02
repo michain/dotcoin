@@ -49,7 +49,8 @@ func (manager *SyncManager) Start(){
 		select {
 		case m := <-manager.msgChan:
 			switch msg := m.(type) {
-
+			case *protocol.MsgVersion:
+				manager.handleVerionMsg(msg)
 			case *protocol.MsgInv:
 				manager.handleInvMsg(msg)
 			default:
@@ -179,7 +180,20 @@ func (manager *SyncManager) handleInvMsg(msg *protocol.MsgInv) {
 	}
 }
 
+func (manager *SyncManager) handleVerionMsg(msg *protocol.MsgVersion){
+	//TODO Add remote Timestamp
+	manager.peerStates[msg.GetFromAddr()] = &peerSyncState{
+		setInventoryKnown: newInventorySet(maxInventorySize),
+		requestedTxns:   make(map[chainhash.Hash]struct{}),
+		requestedBlocks: make(map[chainhash.Hash]struct{}),
+	}
+
+}
 
 func (manager *SyncManager) HandleInv(msg *protocol.MsgInv) {
+	manager.msgChan <- msg
+}
+
+func (manager *SyncManager) HandleVersion(msg *protocol.MsgVersion){
 	manager.msgChan <- msg
 }

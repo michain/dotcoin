@@ -12,4 +12,7 @@ type MessageHandle interface {
 
 	// OnInv is invoked when a peer receives an inv message.
 	OnInv(msg *protocol.MsgInv)
+
+	// OnVersion is invoked when a peer receives an ver message
+	OnVersion(msg *protocol.MsgVersion)
 }

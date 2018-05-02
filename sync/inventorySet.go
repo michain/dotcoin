@@ -8,6 +8,8 @@ import (
 	"github.com/michain/dotcoin/protocol"
 )
 
+const maxInventorySize = 100
+
 type inventorySet struct {
 	mtx       sync.Mutex
 	itemMap  map[protocol.InvInfo]*list.Element // nearly O(1) lookups

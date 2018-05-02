@@ -43,3 +43,8 @@ const (
 	CmdMerkleBlock = "merkleblock"
 	CmdSendHeaders = "sendheaders"
 )
+
+const(
+	// ProtocolVersion is the latest protocol version this package supports.
+	ProtocolVersion uint32 = 10000
+)

@@ -39,3 +39,11 @@ func (handler *MessageHandler) OnInv(msg *protocol.MsgInv) {
 	}
 	return
 }
+
+// OnVersion is invoked when a peer receives an ver message
+func (handler *MessageHandler) OnVersion(msg *protocol.MsgVersion){
+	logx.DevPrintf("messageHandler OnVersion peer:%v from:%v version:%+v", handler.peer.GetListenAddr(), msg.AddrFrom, msg.ProtocolVersion)
+	//add addrManager
+	curAddrManager.AddAddress(msg.GetFromAddr())
+	curSyncManager.HandleVersion(msg)
+}
