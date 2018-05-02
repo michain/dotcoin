@@ -33,7 +33,7 @@ func localSingleSend(node *Node) {
 			lock.Unlock()
 			n := 0
 			if raw.FromAddr != "" {
-				// send to the seed
+				// send to the addr
 				conn := node.getConnByAddr(raw.FromAddr)
 				if conn == nil{
 					logx.Warn("localSingleSend getConnBtAddr is nil", raw.FromAddr)
