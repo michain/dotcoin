@@ -21,7 +21,7 @@ type Block struct {
 	Hash          []byte
 	Difficult	  int
 	Nonce         int
-	Height        int
+	Height        int32
 	Transactions  []*Transaction
 }
 
@@ -75,7 +75,7 @@ func DeserializeBlock(d []byte) *Block {
 }
 
 // NewBlock creates and returns Block
-func NewBlock(transactions []*Transaction, prevBlockHash []byte, height int) *Block {
+func NewBlock(transactions []*Transaction, prevBlockHash []byte, height int32) *Block {
 	block := &Block{}
 	block.Timestamp = time.Now().Unix()
 	block.Transactions = transactions

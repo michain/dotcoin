@@ -8,7 +8,8 @@ import (
 // WriteConnRequest write request data to conn
 func WriteConnRequest(conn net.Conn, r interface{}) error{
 	encoder := gob.NewEncoder(conn)
-	return encoder.Encode(r)
+	err := encoder.Encode(r)
+	return err
 }
 
 // ReadConnRequest read request data from conn

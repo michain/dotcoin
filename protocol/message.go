@@ -1,7 +1,6 @@
 package protocol
 
 type netMessage struct{
-	AddrSource string
 	AddrFrom string
 	needBroadcast bool
 }

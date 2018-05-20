@@ -35,7 +35,8 @@ func Test_StartPeer(t *testing.T){
 	var pnode2_1 = "127.0.0.1:2492"
 
 	go func() {
-		p := peer.NewPeer(seed, "", NewMessageHandler())
+		var p *peer.Peer
+		p = peer.NewPeer(seed, "", NewMessageHandler())
 
 		err := p.StartListen()
 		if err != nil {
@@ -46,7 +47,8 @@ func Test_StartPeer(t *testing.T){
 	}()
 
 	go func() {
-		p := peer.NewPeer(pnode1, seed, NewMessageHandler())
+		var p *peer.Peer
+		p = peer.NewPeer(pnode1, seed, NewMessageHandler())
 		err := p.StartListen()
 		if err != nil {
 			t.Error("pnode1 Peer start error", err)
@@ -56,7 +58,8 @@ func Test_StartPeer(t *testing.T){
 	}()
 
 	go func() {
-		p := peer.NewPeer(pnode1_1, pnode1, NewMessageHandler())
+		var p *peer.Peer
+		p = peer.NewPeer(pnode1_1, pnode1, NewMessageHandler())
 		err := p.StartListen()
 		if err != nil {
 			t.Error("pnode1_1 Peer start error", err)
@@ -67,7 +70,8 @@ func Test_StartPeer(t *testing.T){
 
 
 	go func() {
-		p := peer.NewPeer(pnode2, seed, NewMessageHandler())
+		var p *peer.Peer
+		p = peer.NewPeer(pnode2, seed, NewMessageHandler())
 		err := p.StartListen()
 		if err != nil {
 			t.Error("pnode2 Peer start error", err)
@@ -97,11 +101,15 @@ func Test_StartPeer(t *testing.T){
 
 	go func(){
 		time.Sleep(time.Second * 6)
-		iv := protocol.NewInvInfo(protocol.InvTypeTx, chainhash.ZeroHash())
-		msg := protocol.NewMsgInv()
-		msg.AddInvInfo(iv)
+		msg := protocol.NewMsgVersion(curBlockChain.GetBestHeight())
+		msg.AddrFrom = p_2_1.GetSeedAddr()
+		p_2_1.SendSingleMessage(msg)
 
-		p_2_1.BroadcastMessage(msg)
+		iv := protocol.NewInvInfo(protocol.InvTypeTx, chainhash.ZeroHash())
+		msgInv := protocol.NewMsgInv()
+		msgInv.AddInvInfo(iv)
+
+		p_2_1.BroadcastMessage(msgInv)
 	}()
 
 
@@ -115,17 +123,17 @@ func Test_StartPeer(t *testing.T){
 func Test_runMining(t *testing.T){
 	//add tx
 
-	fromWallet := currentWallets.GetWallet(fromAddress)
+	fromWallet := curWallets.GetWallet(fromAddress)
 	if fromWallet  == nil{
 		fmt.Println("not exists [from] address")
 		os.Exit(-1)
 	}
 
-	to := currentWallets.CreateWallet().GetStringAddress()
-	tx := chain.NewUTXOTransaction(fromWallet, to, 1, currentBlockChain.GetUTXOSet())
+	to := curWallets.CreateWallet().GetStringAddress()
+	tx := chain.NewUTXOTransaction(fromWallet, to, 1, curBlockChain.GetUTXOSet())
 	fmt.Println("NewUTXOTransaction", tx.ID, tx.StringHash())
 	//add TX to mempool
-	_, err := txPool.MaybeAcceptTransaction(tx, true, true)
+	_, err := curTXMemPool.MaybeAcceptTransaction(tx, true, true)
 	if err != nil{
 		fmt.Println(err)
 	}
@@ -138,15 +146,15 @@ func Test_runMining(t *testing.T){
 	logx.Debugf("End Range TxPool")
 	*/
 
-	block, err := runMining(currentBlockChain)
+	block, err := runMining(curBlockChain)
 	if err != nil{
 		log.Panic("Mining err", err)
 		return
 	}
 
-	fmt.Println(fromAddress, "Balance", currentBlockChain.GetBalance(fromAddress))
+	fmt.Println(fromAddress, "Balance", curBlockChain.GetBalance(fromAddress))
 
-	lastBlock, err := currentBlockChain.GetLastBlock()
+	lastBlock, err := curBlockChain.GetLastBlock()
 	if err != nil{
 		fmt.Println("GetLastBlock err", err)
 	}else{

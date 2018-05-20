@@ -4,6 +4,9 @@ import (
 	"github.com/michain/dotcoin/protocol"
 )
 type MessageHandle interface {
+
+	SetPeer(p *Peer)
+
 	// OnGetAddr is invoked when a peer receives a getaddr message.
 	OnGetAddr(msg *protocol.MsgGetAddr)
 

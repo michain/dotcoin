@@ -14,8 +14,10 @@ import (
 	"github.com/michain/dotcoin/sync"
 	"github.com/michain/dotcoin/logx"
 	"github.com/michain/dotcoin/peer"
+	protocol "github.com/michain/dotcoin/protocol"
 )
 
+var curNodeID string
 var curTXMemPool *mempool.TxPool
 var curWallets *wallet.WalletSet
 var curBlockChain *chain.Blockchain
@@ -68,13 +70,14 @@ func listenPeer(){
 		log.Fatalf("listenPeer error: seedAddrs is nil")
 	}
 	logx.Debugf("listenPeer begin listen:%v seed:%v", tcpPort, seedAddrs[0])
-	curPeer = peer.NewPeer(tcpPort, seedAddrs[0], NewMessageHandler(curPeer))
+	curPeer = peer.NewPeer(tcpPort, seedAddrs[0], NewMessageHandler())
 	curPeer.StartListen()
 }
 
 // initServer init server
 func initServer(nodeID, minerAddr string, isGenesisNode bool) error{
 	listenAddress = fmt.Sprintf("localhost:%s", nodeID)
+	curNodeID = nodeID
 	var err error
 	isFirstInit := false
 
@@ -160,7 +163,7 @@ func initServer(nodeID, minerAddr string, isGenesisNode bool) error{
 	if err!= nil{
 		return err
 	}
-	go curSyncManager.Start()
+	go curSyncManager.StartSync()
 
 
 	//TODO:save to db?
@@ -178,14 +181,21 @@ func StartServer(nodeID, minerAddr string, isGenesisNode bool) error{
 		return err
 	}
 
+	//start peer
+	go listenPeer()
+
 	//TODO:check config
 	go LoopMining(curBlockChain)
 
-	//TODO:sync this node version info
+	if !isGenesisNode {
+		//send this node version info
+		msg := protocol.NewMsgVersion(curBlockChain.GetBestHeight())
+		msg.AddrFrom = curPeer.GetSeedAddr()
+		curPeer.SendSingleMessage(msg)
+	}
+
 	//TODO:sync block data
 
-	//start peer
-	go listenPeer()
 
 	//TODO:check config
 	listenRPCServer(curBlockChain)

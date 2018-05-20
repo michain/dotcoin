@@ -26,6 +26,7 @@ func NewPeer(listenAddr, seedAddr string, msgHandler MessageHandle) *Peer{
 	p.receiveQueue = make(chan *Request, 10)
 	p.messageHandler = msgHandler
 	p.node = NewNode(listenAddr, seedAddr, p.boardcastQueue, p.receiveQueue, p.singleQueue)
+	p.messageHandler.SetPeer(p)
 	return p
 }
 
@@ -34,6 +35,9 @@ func (p *Peer) StartListen() error{
 	return p.node.startNode()
 }
 
+func (p *Peer) GetSeedAddr() string{
+	return p.node.seedAddr
+}
 
 // GetListenAddr get peer listen addr
 func (p *Peer) GetListenAddr() string{

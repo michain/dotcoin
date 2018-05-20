@@ -10,8 +10,12 @@ type MessageHandler struct{
 	peer *peer.Peer
 }
 
-func NewMessageHandler(p *peer.Peer) *MessageHandler{
-	return &MessageHandler{peer:p}
+func NewMessageHandler() *MessageHandler{
+	return &MessageHandler{}
+}
+
+func (handler *MessageHandler) SetPeer(p *peer.Peer){
+	handler.peer = p
 }
 
 // OnGetAddr is invoked when a peer receives a getaddr message
@@ -25,7 +29,7 @@ func (handler *MessageHandler) OnGetAddr(msg *protocol.MsgGetAddr) {
 
 // OnAddr is invoked when a peer receives an addr message.
 func (handler *MessageHandler) OnAddr(msg *protocol.MsgAddr) {
-	logx.DevPrintf("MessageHandler OnAddr peer:%v from:%v peers:%v", handler.peer.GetListenAddr(), msg.AddrFrom, curAddrManager.GetAddresses())
+ 	logx.DevPrintf("MessageHandler OnAddr peer:%v from:%v peers:%v", handler.peer.GetListenAddr(), msg.AddrFrom, curAddrManager.GetAddresses())
 	for _, addr:=range msg.AddrList{
 		curAddrManager.AddAddress(addr)
 	}

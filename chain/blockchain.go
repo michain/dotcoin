@@ -161,7 +161,7 @@ func (bc *Blockchain) GetBlock(blockHash []byte) (*Block, error) {
 // MineBlock mines a new block with the provided transactions
 func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
 	var lastHash, lastBlockData []byte
-	var lastHeight int
+	var lastHeight int32
 	var err error
 
 	for _, tx := range transactions {
@@ -319,7 +319,7 @@ func (bc *Blockchain) GetBalance(address string) int{
 }
 
 // GetBestHeight returns the height of the latest block
-func (bc *Blockchain) GetBestHeight() int {
+func (bc *Blockchain) GetBestHeight() int32 {
 	var lastBlock *Block
 	_, lastBlockData, err := storage.GetLastBlock(bc.db)
 	if err != nil{

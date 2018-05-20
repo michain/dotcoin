@@ -44,7 +44,7 @@ func New(config *Config) (*SyncManager, error) {
 	return &sm, nil
 }
 
-func (manager *SyncManager) Start(){
+func (manager *SyncManager) StartSync(){
 	for {
 		select {
 		case m := <-manager.msgChan:
@@ -187,7 +187,7 @@ func (manager *SyncManager) handleVerionMsg(msg *protocol.MsgVersion){
 		requestedTxns:   make(map[chainhash.Hash]struct{}),
 		requestedBlocks: make(map[chainhash.Hash]struct{}),
 	}
-
+	logx.Debug("handleVerionMsg", msg.GetFromAddr(), *msg)
 }
 
 func (manager *SyncManager) HandleInv(msg *protocol.MsgInv) {
