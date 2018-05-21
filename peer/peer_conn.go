@@ -40,6 +40,9 @@ func (r *Request) handleConn(node *Node, conn net.Conn) (string, error) {
 		//send ack message
 		sendNormalRequestReceived(r, node, conn)
 	case SingleSendRequest:
+		logx.DevDebugf("peer.SingleSendRequest [%v] => [%v] %v", r.From, node.listenAddr, *r)
+		// send to the outer application
+		node.recv <- r
 		//send ack message
 		sendNormalRequestReceived(r, node, conn)
 	case SyncBackupSeeds:
