@@ -113,3 +113,9 @@ func (p *Peer) PushAddrMsg(addresses []string) error {
 	p.SendSingleMessage(msg)
 	return nil
 }
+
+func (p *Peer) PushVersion(msg *protocol.MsgVersion) error{
+	msg.AddrFrom = p.GetSeedAddr()
+	p.SendSingleMessage(msg)
+	return nil
+}

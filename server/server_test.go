@@ -10,7 +10,6 @@ import (
 	"time"
 	"github.com/michain/dotcoin/protocol"
 	"github.com/michain/dotcoin/peer"
-	"github.com/michain/dotcoin/config/chainhash"
 )
 
 const nodeID = "3eb456d086f34118925793496cd20945"
@@ -29,8 +28,8 @@ func init(){
 
 func Test_StartPeer(t *testing.T){
 	var seed = "127.0.0.1:2398"
-	var pnode1 = "127.0.0.1:2391"
-	var pnode1_1 = "127.0.0.1:2392"
+	//var pnode1 = "127.0.0.1:2391"
+	//var pnode1_1 = "127.0.0.1:2392"
 	var pnode2 = "127.0.0.1:2491"
 	var pnode2_1 = "127.0.0.1:2492"
 
@@ -46,7 +45,7 @@ func Test_StartPeer(t *testing.T){
 		}
 	}()
 
-	go func() {
+	/*go func() {
 		var p *peer.Peer
 		p = peer.NewPeer(pnode1, seed, NewMessageHandler())
 		err := p.StartListen()
@@ -67,7 +66,7 @@ func Test_StartPeer(t *testing.T){
 			t.Log("pnode1_1 Peer start success")
 		}
 	}()
-
+*/
 
 	go func() {
 		var p *peer.Peer
@@ -100,17 +99,19 @@ func Test_StartPeer(t *testing.T){
 	}()
 
 	go func(){
-		time.Sleep(time.Second * 6)
+		time.Sleep(time.Second * 3)
 		msg := protocol.NewMsgVersion(curBlockChain.GetBestHeight())
-		msg.AddrFrom = p_2_1.GetSeedAddr()
-		p_2_1.SendSingleMessage(msg)
+		p_2_1.PushVersion(msg)
 
-		iv := protocol.NewInvInfo(protocol.InvTypeTx, chainhash.ZeroHash())
+
+		/*iv := protocol.NewInvInfo(protocol.InvTypeTx, chainhash.ZeroHash())
 		msgInv := protocol.NewMsgInv()
 		msgInv.AddInvInfo(iv)
+		p_2_1.BroadcastMessage(msgInv)*/
 
-		p_2_1.BroadcastMessage(msgInv)
 	}()
+
+
 
 
 	for{

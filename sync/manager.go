@@ -180,14 +180,25 @@ func (manager *SyncManager) handleInvMsg(msg *protocol.MsgInv) {
 	}
 }
 
+// handleVerionMsg handles version messages from other peer.
+// check best block height
 func (manager *SyncManager) handleVerionMsg(msg *protocol.MsgVersion){
-	//TODO Add remote Timestamp
+	//TODO Add remote Timestamp -> AddTimeData
 	manager.peerStates[msg.GetFromAddr()] = &peerSyncState{
 		setInventoryKnown: newInventorySet(maxInventorySize),
 		requestedTxns:   make(map[chainhash.Hash]struct{}),
 		requestedBlocks: make(map[chainhash.Hash]struct{}),
 	}
 	logx.Debug("handleVerionMsg", msg.GetFromAddr(), *msg)
+
+	if manager.chain.GetBestHeight() < msg.LastBlockHeight  {
+		//TODO:send getBlock
+	} else if manager.chain.GetBestHeight() > msg.LastBlockHeight   {
+		//send version info
+		msg := protocol.NewMsgVersion(manager.chain.GetBestHeight())
+		manager.peer.PushVersion(msg)
+	}
+
 }
 
 func (manager *SyncManager) HandleInv(msg *protocol.MsgInv) {
