@@ -10,7 +10,7 @@ import (
 func (p *Peer) ReciveMessage() {
 	for {
 		req := <-p.receiveQueue
-		logx.DevPrintf("Received msgData type:%v", reflect.TypeOf(req.Data))
+		//logx.DevPrintf("Received msgData type:%v", reflect.TypeOf(req.Data))
 		if p.messageHandler == nil {
 			logx.Error("Peer's messageHandler is nil!")
 			break
@@ -28,6 +28,9 @@ func (p *Peer) ReciveMessage() {
 		case protocol.MsgGetBlocks:
 			msg.AddrFrom = req.From
 			p.messageHandler.OnGetBlocks(&msg)
+		case protocol.MsgGetData:
+			msg.AddrFrom = req.From
+			p.messageHandler.OnGetData(&msg)
 		default:
 			logx.Errorf("Received unhandled message of type %v "+
 				"from %v [%v]", reflect.TypeOf(req.Data), p, msg)

@@ -27,6 +27,7 @@ func (manager *SyncManager) handleMsgInv(msg *protocol.MsgInv) {
 			break
 		}
 	}
+	//TODO why calc lastBlock?
 	fmt.Println("SyncManager:handleInvMsg", lastBlock)
 
 	for _, iv := range invInfos {
@@ -137,9 +138,9 @@ func (manager *SyncManager) handleMsgVersion(msg *protocol.MsgVersion){
 	}
 }
 
-// handleMsgGetBlocks
+// handleMsgGetBlocks handles getblocks messages from other peer.
 func (manager *SyncManager) handleMsgGetBlocks(msg *protocol.MsgGetBlocks){
-	logx.Debug("handleMsgGetBlocks", msg.GetFromAddr(), *msg)
+	logx.Debugf("SyncManager.handleMsgGetBlocks peer:%v msg:%v", manager.peer.GetListenAddr(), *msg)
 	block, err := manager.chain.GetLastBlock()
 	if err != nil{
 		//TODO log get last block err
@@ -165,3 +166,7 @@ func (manager *SyncManager) handleMsgGetBlocks(msg *protocol.MsgGetBlocks){
 	manager.peer.SendSingleMessage(msgInv)
 }
 
+// handleMsgGetData handles getdata messages from other peer.
+func (manager *SyncManager) handleMsgGetData(msg *protocol.MsgGetData){
+	logx.Debugf("SyncManager.handleMsgGetData peer:%v msg:%v", manager.peer.GetListenAddr(), *msg)
+}

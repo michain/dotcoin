@@ -55,6 +55,8 @@ func (manager *SyncManager) StartSync(){
 				manager.handleMsgInv(msg)
 			case *protocol.MsgGetBlocks:
 				manager.handleMsgGetBlocks(msg)
+			case *protocol.MsgGetData:
+				manager.handleMsgGetData(msg)
 			default:
 				logx.Warnf("Invalid message type in sync msg chan: %T", msg)
 			}
@@ -102,5 +104,9 @@ func (manager *SyncManager) HandleVersion(msg *protocol.MsgVersion){
 }
 
 func (manager *SyncManager) HandleGetBlocks(msg *protocol.MsgGetBlocks){
+	manager.msgChan <- msg
+}
+
+func (manager *SyncManager) HandleGetData(msg *protocol.MsgGetData){
 	manager.msgChan <- msg
 }

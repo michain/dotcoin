@@ -149,6 +149,9 @@ func (bc *Blockchain) AddBlock(block *Block) {
 func (bc *Blockchain) HaveBlock(blockHash hashx.Hash) (bool, error){
 	b, err:=bc.GetBlock(blockHash.CloneBytes())
 	if err != nil{
+		if err == storage.ErrorBlockNotFount{
+			return false, nil
+		}
 		return false, err
 	}else{
 		return b != nil, nil
