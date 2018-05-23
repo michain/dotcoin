@@ -34,7 +34,7 @@ func (handler *MessageHandler) OnAddr(msg *protocol.MsgAddr) {
 func (handler *MessageHandler) OnInv(msg *protocol.MsgInv) {
 	logx.DevPrintf("messageHandler OnInv peer:%v remote:%v invs:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.InvList[0])
 	if len(msg.InvList) > 0 {
-		handler.server.SyncManager.HandleInv(msg)
+		handler.server.SyncManager.HandleMessage(msg)
 	}
 	return
 }
@@ -44,19 +44,23 @@ func (handler *MessageHandler) OnVersion(msg *protocol.MsgVersion){
 	logx.DevPrintf("messageHandler OnVersion peer:%v remote:%v version:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.ProtocolVersion)
 	//add addrManager
 	handler.server.AddrManager.AddAddress(msg.GetFromAddr())
-	handler.server.SyncManager.HandleVersion(msg)
+	handler.server.SyncManager.HandleMessage(msg)
 }
 
 // OnGetBlocks is invoked when a peer receives an getblocks message
 func (handler *MessageHandler) OnGetBlocks(msg *protocol.MsgGetBlocks){
 	logx.DevPrintf("messageHandler OnGetBlocks peer:%v remote:%v version:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.ProtocolVersion)
-	//add addrManager
-	handler.server.SyncManager.HandleGetBlocks(msg)
+	handler.server.SyncManager.HandleMessage(msg)
 }
 
 // OnGetData is invoked when a peer receives an getdata message
 func (handler *MessageHandler) OnGetData(msg *protocol.MsgGetData){
 	logx.DevPrintf("messageHandler OnGetData peer:%v remote:%v version:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.ProtocolVersion)
-	//add addrManager
-	handler.server.SyncManager.HandleGetData(msg)
+	handler.server.SyncManager.HandleMessage(msg)
+}
+
+// OnBlock is invoked when a peer receives an block message
+func (handler *MessageHandler) OnBlock(msg *protocol.MsgGetData){
+	logx.DevPrintf("messageHandler OnBlock peer:%v remote:%v version:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.ProtocolVersion)
+	handler.server.SyncManager.HandleMessage(msg)
 }

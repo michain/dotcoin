@@ -57,6 +57,8 @@ func (manager *SyncManager) StartSync(){
 				manager.handleMsgGetBlocks(msg)
 			case *protocol.MsgGetData:
 				manager.handleMsgGetData(msg)
+			case *protocol.MsgBlock:
+				manager.handleMsgBlock(msg)
 			default:
 				logx.Warnf("Invalid message type in sync msg chan: %T", msg)
 			}
@@ -72,7 +74,7 @@ func (manager *SyncManager) StartSync(){
 func (manager *SyncManager) haveInventory(inv *protocol.InvInfo) (bool, error) {
 	switch inv.Type {
 	case protocol.InvTypeBlock:
-		return manager.chain.HaveBlock(inv.Hash)
+		return manager.chain.HaveBlock(&inv.Hash)
 	case protocol.InvTypeTx:
 		//check tx-mempool
 		if manager.txMemPool.HaveTransaction(inv.Hash) {
@@ -93,20 +95,3 @@ func (manager *SyncManager) haveInventory(inv *protocol.InvInfo) (bool, error) {
 }
 
 
-
-
-func (manager *SyncManager) HandleInv(msg *protocol.MsgInv) {
-	manager.msgChan <- msg
-}
-
-func (manager *SyncManager) HandleVersion(msg *protocol.MsgVersion){
-	manager.msgChan <- msg
-}
-
-func (manager *SyncManager) HandleGetBlocks(msg *protocol.MsgGetBlocks){
-	manager.msgChan <- msg
-}
-
-func (manager *SyncManager) HandleGetData(msg *protocol.MsgGetData){
-	manager.msgChan <- msg
-}

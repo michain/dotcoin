@@ -112,9 +112,16 @@ func (b *Block) HashTransactions() []byte {
 	return mTree.RootNode.Data
 }
 
-func (b *Block) GetHash() (*hashx.Hash, error) {
-	return hashx.NewHash(b.Hash)
+func (b *Block) GetHash() (*hashx.Hash) {
+	hash,_ := hashx.NewHash(b.Hash)
+	return hash
 }
+
+func (b *Block) GetPrevHash() (*hashx.Hash) {
+	hash,_ := hashx.NewHash(b.PrevBlockHash)
+	return hash
+}
+
 
 
 func getCorrectDifficult() int{

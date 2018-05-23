@@ -22,4 +22,7 @@ type MessageHandle interface {
 
 	// OnGetData is invoked when a peer receives an getdata message
 	OnGetData(msg *protocol.MsgGetData)
+
+	// OnBlock is invoked when a peer receives an block message
+	OnBlock(msg *protocol.MsgGetData)
 }

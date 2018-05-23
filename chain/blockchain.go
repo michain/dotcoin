@@ -11,6 +11,8 @@ import (
 	"github.com/michain/dotcoin/storage"
 	"github.com/michain/dotcoin/wallet"
 	"github.com/michain/dotcoin/util/hashx"
+	"sync"
+	"github.com/michain/dotcoin/logx"
 )
 
 const genesisCoinbaseData = "The Times 15/April/2018 for my 35th birthday!"
@@ -24,11 +26,16 @@ const (
 
 var ErrorBlockChainNotFount = errors.New("blockchain is not found")
 var ErrorNoExistsAnyBlock = errors.New("not exists any block")
+var ErrorNoExistsBlock = errors.New("not exists block")
 
 // Blockchain implements interactions with a DB
 type Blockchain struct {
 	lastBlockHash []byte
 	db  *bolt.DB
+	chainLock *sync.RWMutex
+
+	orphanLock   *sync.RWMutex
+	orphanBlocks map[hashx.Hash]*Block
 }
 
 // CreateBlockchain creates a new blockchain with genesisBlock
@@ -67,7 +74,13 @@ func CreateBlockchain(isGenesisNode bool, address, nodeID string) *Blockchain {
 
 
 
-	bc := Blockchain{lastBlockHash, db}
+	bc := Blockchain{
+		lastBlockHash:lastBlockHash,
+		db:db,
+		chainLock:new(sync.RWMutex),
+		orphanLock:new(sync.RWMutex),
+		orphanBlocks:make(map[hashx.Hash]*Block),
+	}
 
 	fmt.Println("CreateBlockchain Success!")
 	fmt.Println(fmt.Sprintf("lastBlockHash %x", bc.lastBlockHash))
@@ -99,19 +112,81 @@ func LoadBlockChain(nodeID string) (*Blockchain, error) {
 		return nil, err
 	}
 
-	bc := Blockchain{lastBlockHash, db}
+	bc := Blockchain{
+		lastBlockHash:lastBlockHash,
+		db:db,
+		chainLock:new(sync.RWMutex),
+		orphanLock:new(sync.RWMutex),
+		orphanBlocks:make(map[hashx.Hash]*Block),
+	}
 
 	return &bc, nil
 }
 
-// GetStorageDB
+// GetStorageDB get storage db
 func (bc *Blockchain) GetStorageDB() *bolt.DB {
 	return bc.db
+}
+
+// ProcessBlock handling new block into chain
+// return value: IsMainChain, IsOrphanBlock, error
+func (bc *Blockchain) ProcessBlock(block *Block)(bool, bool, error){
+	bc.chainLock.Lock()
+	defer bc.chainLock.Unlock()
+
+	blockHash := block.GetHash()
+	logx.Tracef("Blockchain Processing block %v", blockHash)
+
+	// The block must not already exist in the chain.
+	exists, err := bc.HaveBlock(blockHash)
+	if err != nil {
+		logx.Errorf("Blockchain Processing check have block error %v %v", err, blockHash)
+		return false, false, err
+	}
+	if exists {
+		str := fmt.Sprintf("Blockchain Processing already have block %v", blockHash)
+		return false, false, errors.New(str)
+	}
+
+	// The block must not already exist as an orphan.
+	if _, exists := bc.orphanBlocks[*blockHash]; exists {
+		str := fmt.Sprintf("Blockchain Processing already have block (orphan) %v", blockHash)
+		return false, false, errors.New(str)
+	}
+
+	//TODO checkBlockSanity
+
+	//check prevHash, if not exists, add to orphanBlocks
+	prevHash := block.GetPrevHash()
+	prevHashExists, err := bc.HaveBlock(prevHash)
+	if err != nil {
+		logx.Errorf("Blockchain Processing check have block for prevhash error %v %v", err, prevHash)
+		return false, false, err
+	}
+	if !prevHashExists {
+		logx.Infof("Blockchain Processing Adding orphan block %v with parent %v", blockHash, prevHash)
+		bc.addOrphanBlock(block)
+		return false, true, nil
+	}
+
+	//add block into chain
+	bc.AddBlock(block)
+	return true, false, nil
+}
+
+// addOrphanBlock add block into orphan blocks
+func (bc *Blockchain) addOrphanBlock(block *Block){
+	bc.orphanLock.Lock()
+	defer bc.orphanLock.Unlock()
+	bc.orphanBlocks[*block.GetHash()] = block
 }
 
 // AddBlock add the block into the blockchain
 // save to bolt, update LastBlockHash
 func (bc *Blockchain) AddBlock(block *Block) {
+	bc.chainLock.Lock()
+	defer bc.chainLock.Unlock()
+
 	err := bc.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(storage.BoltBlocksBucket))
 		blockInDb := b.Get(block.Hash)
@@ -146,7 +221,7 @@ func (bc *Blockchain) AddBlock(block *Block) {
 }
 
 // HaveBlock check block hash exists
-func (bc *Blockchain) HaveBlock(blockHash hashx.Hash) (bool, error){
+func (bc *Blockchain) HaveBlock(blockHash *hashx.Hash) (bool, error){
 	b, err:=bc.GetBlock(blockHash.CloneBytes())
 	if err != nil{
 		if err == storage.ErrorBlockNotFount{
@@ -164,6 +239,9 @@ func (bc *Blockchain) GetBlock(blockHash []byte) (*Block, error) {
 	blockData, err := storage.GetBlock(bc.db, blockHash)
 	if err != nil{
 		return nil, err
+	}
+	if blockData == nil{
+		return nil,ErrorNoExistsBlock
 	}
 	block = DeserializeBlock(blockData)
 	return block, err
@@ -376,10 +454,7 @@ func (bc *Blockchain) GetBlockHashes(beginHash *hashx.Hash, stopHash hashx.Hash,
 	for {
 		block := bci.Next()
 
-		h, err := block.GetHash()
-		if err != nil{
-			return nil, err
-		}
+		h := block.GetHash()
 
 		if stopHash.IsEqual(h){
 			break

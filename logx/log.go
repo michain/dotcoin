@@ -27,11 +27,19 @@ func Debugf(format string, i ...interface{}) {
 
 
 func Debug(i ...interface{}) {
-	fmt.Println("DEBUG ", i[0:])
+	fmt.Println("DEBUG ", fmt.Sprint(i...))
+}
+
+func Info(i ...interface{}) {
+	fmt.Println("INFO ", fmt.Sprint(i...))
+}
+
+func Infof(format string, i ...interface{}){
+	fmt.Println("INFO ", fmt.Sprintf(format, i...))
 }
 
 func Warn(i ...interface{}){
-	fmt.Println("WARN ", i[0:])
+	fmt.Println("WARN ", fmt.Sprint(i...))
 }
 
 func Warnf(format string, i ...interface{}){
@@ -39,7 +47,7 @@ func Warnf(format string, i ...interface{}){
 }
 
 func Error(i ...interface{}){
-	fmt.Println("ERROR ", i[0:])
+	fmt.Println("ERROR ", fmt.Sprint(i...))
 }
 
 func Errorf(format string, i ...interface{}){

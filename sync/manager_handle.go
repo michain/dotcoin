@@ -7,6 +7,10 @@ import (
 	"github.com/michain/dotcoin/util/hashx"
 )
 
+func (manager *SyncManager) HandleMessage(msg protocol.Message){
+	manager.msgChan <- msg
+}
+
 // handleInvMsg handles inv messages from other peer.
 // handle the inventory message and act GetData message
 func (manager *SyncManager) handleMsgInv(msg *protocol.MsgInv) {
@@ -118,14 +122,7 @@ func (manager *SyncManager) handleMsgVersion(msg *protocol.MsgVersion){
 				logx.Debug("handleMsgVersion::GetLastBlock error", err)
 				return
 			}
-			h, err := block.GetHash()
-			if err != nil {
-				//TODO log get last block's hash err
-				logx.Debug("handleMsgVersion::GetHash error", err)
-
-				return
-			}
-			hashStop = h
+			hashStop = block.GetHash()
 		}
 		msgSend := protocol.NewMsgGetBlocks(*hashStop)
 		msgSend.AddrFrom = msg.GetFromAddr()
@@ -146,11 +143,7 @@ func (manager *SyncManager) handleMsgGetBlocks(msg *protocol.MsgGetBlocks){
 		//TODO log get last block err
 		return
 	}
-	h, err:= block.GetHash()
-	if err != nil{
-		//TODO log get last block's hash err
-		return
-	}
+	h := block.GetHash()
 	hashes, err:= manager.chain.GetBlockHashes(h, msg.HashStop, protocol.MaxBlocksPerMsg)
 	if err != nil{
 		//TODO log get block hashes err
@@ -169,4 +162,40 @@ func (manager *SyncManager) handleMsgGetBlocks(msg *protocol.MsgGetBlocks){
 // handleMsgGetData handles getdata messages from other peer.
 func (manager *SyncManager) handleMsgGetData(msg *protocol.MsgGetData){
 	logx.Debugf("SyncManager.handleMsgGetData peer:%v msg:%v", manager.peer.GetListenAddr(), *msg)
+	for _, iv := range msg.InvList {
+		switch iv.Type {
+		case protocol.InvTypeBlock:
+			block, err :=manager.chain.GetBlock(iv.Hash.CloneBytes())
+			if err != nil{
+				logx.Errorf("SyncManager.handleMsgGetData get inv block error %v %v", iv.Hash, err)
+				//TODO add to requery queue
+				continue
+			}
+			msgSend := protocol.NewMsgBlock(block)
+			err = manager.peer.PushBlock(msgSend)
+		default:
+			logx.Warnf("SyncManager.handleMsgGetData Unknown type in getdata request %d",
+				iv.Type)
+			continue
+		}
+	}
+}
+
+// handleMsgGetData handles getdata messages from other peer.
+func (manager *SyncManager) handleMsgBlock(msg *protocol.MsgBlock){
+	logx.Debugf("SyncManager.handleMsgBlock peer:%v msg:%v", manager.peer.GetListenAddr(), *msg)
+	hash := msg.Block.GetHash()
+
+	// Add the block to the known inventory for the peer.
+	iv := protocol.NewInvInfo(protocol.InvTypeBlock, *hash)
+	peerState, exists:=manager.peerStates[msg.GetFromAddr()]
+	if !exists{
+		logx.Warnf("SyncManager.handleMsgBlock Received block message from unknown peer %s", msg.GetFromAddr())
+		return
+	}
+	peerState.AddKnownInventory(iv)
+
+
+	// Add block to block chain
+	manager.chain.ProcessBlock(msg.Block)
 }
