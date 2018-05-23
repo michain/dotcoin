@@ -7,5 +7,6 @@ func init(){
 	gob.Register(MsgGetAddr{})
 	gob.Register(MsgInv{})
 	gob.Register(MsgVersion{})
+	gob.Register(MsgGetBlocks{})
 
 }

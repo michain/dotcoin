@@ -1,5 +1,12 @@
 # DotCoin
 
+
+## version 0.1
+* Add Server struct
+* Implement MsgVersion\MsgGetBlocks message
+* Update server_test code
+* 2018-05-23 18:00
+
 ## version 0.09
 * Implement peer.MessageHandle's default mode: server.MessageHandler
 * Implement peer.Boardcast、peer.Single

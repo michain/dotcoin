@@ -1,4 +1,4 @@
-package chainhash
+package hashx
 
 import (
 	"fmt"

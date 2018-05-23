@@ -32,3 +32,12 @@ func (i *BlockchainIterator) Next() *Block {
 
 	return block
 }
+
+// LocationHash locate current hash
+func (i *BlockchainIterator) LocationHash(locateHash []byte) error{
+	_, err:=storage.GetBlock(i.db, locateHash)
+	if err == nil{
+		i.currentHash = locateHash
+	}
+	return err
+}

@@ -6,11 +6,11 @@ import (
 	"github.com/michain/dotcoin/chain"
 )
 
-func LoopMining(bc *chain.Blockchain){
+func (s *Server) LoopMining(){
 	return
 	for{
 		fmt.Println("mining begin...")
-		b, err := runMining(bc)
+		b, err := runMining(s)
 		if err != nil{
 			//TODO log err info
 		}
@@ -21,14 +21,14 @@ func LoopMining(bc *chain.Blockchain){
 }
 
 // RunMining run mine block with mempool
-func runMining(bc *chain.Blockchain) (*chain.Block, error){
+func runMining(s *Server) (*chain.Block, error){
 	var newBlock *chain.Block
-	if curTXMemPool.Count() >= 1 && len(minerAddress) > 0 {
+	if s.TXMemPool.Count() >= 1 && len(s.minerAddress) > 0 {
 	MineTransactions:
 		var txs []*chain.Transaction
 
-		for _, tx := range curTXMemPool.TxDescs() {
-			if bc.VerifyTransaction(tx) {
+		for _, tx := range s.TXMemPool.TxDescs() {
+			if s.BlockChain.VerifyTransaction(tx) {
 				txs = append(txs, tx)
 			}
 		}
@@ -39,24 +39,24 @@ func runMining(bc *chain.Blockchain) (*chain.Block, error){
 		}
 
 		//reward miningAddress in this node
-		cbTx := chain.NewCoinbaseTX(minerAddress, "", coinbaseReward)
+		cbTx := chain.NewCoinbaseTX(s.minerAddress, "", coinbaseReward)
 		txs = append(txs, cbTx)
 
 		//rebuild utxo set
-		newBlock = bc.MineBlock(txs)
+		newBlock = s.BlockChain.MineBlock(txs)
 
-		bc.GetUTXOSet().Rebuild()
+		s.BlockChain.GetUTXOSet().Rebuild()
 
 		fmt.Println("New block is mined!")
 
 		for _, tx := range txs {
 			if !tx.IsCoinBase() {
-				curTXMemPool.RemoveTransaction(tx, false)
+				s.TXMemPool.RemoveTransaction(tx, false)
 			}
 		}
 
-		for _, node := range curAddrManager.GetAddresses() {
-			if node != listenAddress {
+		for _, node := range s.AddrManager.GetAddresses() {
+			if node != s.ListenAddress {
 				//TODO: send inv?
 				hash := newBlock.Hash
 				fmt.Println("sendInv block", hash)
@@ -64,7 +64,7 @@ func runMining(bc *chain.Blockchain) (*chain.Block, error){
 			}
 		}
 
-		if curTXMemPool.Count() > 0 {
+		if s.TXMemPool.Count() > 0 {
 			goto MineTransactions
 		}
 	}else{

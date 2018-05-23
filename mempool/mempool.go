@@ -14,7 +14,7 @@ import (
 	"encoding/gob"
 
 	"github.com/michain/dotcoin/logx"
-	"github.com/michain/dotcoin/config/chainhash"
+	"github.com/michain/dotcoin/util/hashx"
 )
 
 
@@ -259,10 +259,10 @@ func (mp *TxPool) haveTransaction(hash string) bool {
 // in the main pool or in the orphan pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) HaveTransaction(hash []byte) bool {
+func (mp *TxPool) HaveTransaction(hash hashx.Hash) bool {
 	// Protect concurrent access.
 	mp.mtx.RLock()
-	haveTx := mp.haveTransaction(hex.EncodeToString(hash))
+	haveTx := mp.haveTransaction(hash.String())
 	mp.mtx.RUnlock()
 
 	return haveTx
@@ -320,7 +320,7 @@ func (mp *TxPool) addTransaction(tx *chain.Transaction, height int32, fee int64)
 // more details.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) maybeAcceptTransaction(tx *chain.Transaction, isNew, rateLimit, rejectDupOrphans bool) ([]*chainhash.Hash, error) {
+func (mp *TxPool) maybeAcceptTransaction(tx *chain.Transaction, isNew, rateLimit, rejectDupOrphans bool) ([]*hashx.Hash, error) {
 	txHash := tx.StringHash()
 
 	// Don't accept the transaction if it already exists in the pool.  This
@@ -379,7 +379,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *chain.Transaction, isNew, rateLimit
 // be added to the orphan pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) MaybeAcceptTransaction(tx *chain.Transaction, isNew, rateLimit bool) ([]*chainhash.Hash, error) {
+func (mp *TxPool) MaybeAcceptTransaction(tx *chain.Transaction, isNew, rateLimit bool) ([]*hashx.Hash, error) {
 	// Protect concurrent access.
 	mp.mtx.Lock()
 	hashes, err := mp.maybeAcceptTransaction(tx, isNew, rateLimit, true)

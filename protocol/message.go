@@ -1,6 +1,7 @@
 package protocol
 
 type netMessage struct{
+	ProtocolVersion    uint32
 	AddrFrom string
 	needBroadcast bool
 }

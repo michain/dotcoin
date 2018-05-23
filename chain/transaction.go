@@ -13,14 +13,14 @@ import (
 	"crypto/sha256"
 	"strings"
 	"github.com/michain/dotcoin/util"
-	"github.com/michain/dotcoin/config/chainhash"
+	"github.com/michain/dotcoin/util/hashx"
 )
 
 
 
 // Transaction a transaction with ID\input\output
 type Transaction struct{
-	ID   chainhash.Hash
+	ID      hashx.Hash
 	Inputs  []TXInput
 	Outputs []TXOutput
 }
@@ -32,7 +32,7 @@ func (tx Transaction) StringID() string{
 
 // IsCoinBase checks whether the transaction is coinbase
 func (tx Transaction) IsCoinBase() bool {
-	return len(tx.Inputs) == 1 && tx.Inputs[0].PreviousOutPoint.Hash.IsEqual(chainhash.ZeroHash()) && tx.Inputs[0].PreviousOutPoint.Index == -1
+	return len(tx.Inputs) == 1 && tx.Inputs[0].PreviousOutPoint.Hash.IsEqual(hashx.ZeroHash()) && tx.Inputs[0].PreviousOutPoint.Index == -1
 }
 
 
@@ -159,11 +159,11 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 }
 
 // Hash returns the hash of the Transaction
-func (tx *Transaction) Hash() chainhash.Hash {
+func (tx *Transaction) Hash() hashx.Hash {
 	var hash [32]byte
 
 	txCopy := *tx
-	txCopy.ID = *chainhash.ZeroHash()
+	txCopy.ID = *hashx.ZeroHash()
 
 	hash = sha256.Sum256(SerializeTransaction(&txCopy))
 
@@ -201,10 +201,10 @@ func NewCoinbaseTX(to, data string, reward int) *Transaction {
 	if data == ""{
 		data = util.GetRandData()
 	}
-	txin := NewTXInput(NewOutPoint(chainhash.ZeroHash(), -1), nil, []byte(data))
+	txin := NewTXInput(NewOutPoint(hashx.ZeroHash(), -1), nil, []byte(data))
 	txout := NewTXOutput(reward, to)
 	fmt.Println(txout)
-	tx := Transaction{*chainhash.ZeroHash(), []TXInput{*txin}, []TXOutput{*txout}}
+	tx := Transaction{*hashx.ZeroHash(), []TXInput{*txin}, []TXOutput{*txout}}
 
 	tx.ID = tx.Hash()
 
@@ -225,8 +225,8 @@ func NewUTXOTransaction(fromWallet *wallet.Wallet, to string, amount int, UTXOSe
 
 	// Build a list of inputs
 	for txid, outs := range validOutputs {
-		var txID chainhash.Hash
-		err := chainhash.Decode(&txID, txid)
+		var txID hashx.Hash
+		err := hashx.Decode(&txID, txid)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -244,7 +244,7 @@ func NewUTXOTransaction(fromWallet *wallet.Wallet, to string, amount int, UTXOSe
 		outputs = append(outputs, *NewTXOutput(acc-amount, from)) // a change
 	}
 
-	tx := Transaction{*chainhash.ZeroHash(), inputs, outputs}
+	tx := Transaction{*hashx.ZeroHash(), inputs, outputs}
 	tx.ID = tx.Hash()
 	UTXOSet.Blockchain.SignTransaction(&tx, fromWallet.PrivateKey)
 

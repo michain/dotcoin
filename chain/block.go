@@ -9,6 +9,7 @@ import (
 	"github.com/michain/dotcoin/proof"
 	"fmt"
 	"strings"
+	"github.com/michain/dotcoin/util/hashx"
 )
 
 const genesisReward = 100
@@ -109,6 +110,10 @@ func (b *Block) HashTransactions() []byte {
 	}
 	mTree := merkle.NewMerkleTree(transactions)
 	return mTree.RootNode.Data
+}
+
+func (b *Block) GetHash() (*hashx.Hash, error) {
+	return hashx.NewHash(b.Hash)
 }
 
 

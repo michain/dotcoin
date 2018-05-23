@@ -1,8 +1,8 @@
 package protocol
 
 import (
-	"github.com/michain/dotcoin/config/chainhash"
 	"fmt"
+	"github.com/michain/dotcoin/util/hashx"
 )
 
 // Map of service flags back to their constant names for pretty printing.
@@ -19,14 +19,14 @@ const(
 
 type InvInfo struct {
 	Type string        // Type of data
-	Hash chainhash.Hash // Hash of the data
+	Hash hashx.Hash // Hash of the data
 }
 
 // NewInvInfo returns a new InvVect using the provided type and hash.
-func NewInvInfo(typ string, hash *chainhash.Hash) *InvInfo {
+func NewInvInfo(typ string, hash hashx.Hash) *InvInfo {
 	return &InvInfo{
 		Type: typ,
-		Hash: *hash,
+		Hash: hash,
 	}
 }
 

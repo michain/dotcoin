@@ -9,8 +9,8 @@ import (
 	"os"
 	"github.com/michain/dotcoin/util"
 	"github.com/michain/dotcoin/storage"
-	"github.com/michain/dotcoin/config/chainhash"
 	"github.com/michain/dotcoin/wallet"
+	"github.com/michain/dotcoin/util/hashx"
 )
 
 const genesisCoinbaseData = "The Times 15/April/2018 for my 35th birthday!"
@@ -22,7 +22,8 @@ const (
 
 
 
-var ErrorBlockChainNotFount = errors.New("blockchain is not found.")
+var ErrorBlockChainNotFount = errors.New("blockchain is not found")
+var ErrorNoExistsAnyBlock = errors.New("not exists any block")
 
 // Blockchain implements interactions with a DB
 type Blockchain struct {
@@ -31,7 +32,7 @@ type Blockchain struct {
 }
 
 // CreateBlockchain creates a new blockchain with genesisBlock
-func CreateBlockchain(address, nodeID string) *Blockchain {
+func CreateBlockchain(isGenesisNode bool, address, nodeID string) *Blockchain {
 	dbFile := storage.GetDBFileName(nodeID)
 	if util.ExitFile(dbFile) {
 		fmt.Println("Blockchain already exists.")
@@ -40,8 +41,6 @@ func CreateBlockchain(address, nodeID string) *Blockchain {
 
 	fmt.Println("CreateBlockchain Begin")
 
-	var lastBlockHash []byte
-	genesis := NewGenesisBlock(address)
 
 	db, err := bolt.Open(dbFile, 0600, nil)
 	if err != nil {
@@ -54,20 +53,29 @@ func CreateBlockchain(address, nodeID string) *Blockchain {
 		log.Panic("CreateBlockBucket error", err)
 	}
 
-	err =storage.SaveBlock(db, genesis.Hash, SerializeBlock(genesis))
-	if err != nil {
-		log.Panic("SaveBlock error", err)
-	}else{
-		lastBlockHash = genesis.Hash
+	var lastBlockHash []byte
+	if isGenesisNode {
+		genesis := NewGenesisBlock(address)
+
+		err =storage.SaveBlock(db, genesis.Hash, SerializeBlock(genesis))
+		if err != nil {
+			log.Panic("SaveBlock error", err)
+		}else{
+			lastBlockHash = genesis.Hash
+		}
 	}
+
+
 
 	bc := Blockchain{lastBlockHash, db}
 
 	fmt.Println("CreateBlockchain Success!")
 	fmt.Println(fmt.Sprintf("lastBlockHash %x", bc.lastBlockHash))
 
-	//Rebuild UTXO data
-	bc.GetUTXOSet().Rebuild()
+	if isGenesisNode {
+		//Rebuild UTXO data
+		bc.GetUTXOSet().Rebuild()
+	}
 
 	return &bc
 }
@@ -138,8 +146,8 @@ func (bc *Blockchain) AddBlock(block *Block) {
 }
 
 // HaveBlock check block hash exists
-func (bc *Blockchain) HaveBlock(blockHash []byte) (bool, error){
-	b, err:=bc.GetBlock(blockHash)
+func (bc *Blockchain) HaveBlock(blockHash hashx.Hash) (bool, error){
+	b, err:=bc.GetBlock(blockHash.CloneBytes())
 	if err != nil{
 		return false, err
 	}else{
@@ -270,7 +278,7 @@ func (bc *Blockchain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey)
 }
 
 // FindTransaction finds a transaction by its ID
-func (bc *Blockchain) FindTransaction(ID *chainhash.Hash) (*Transaction, error) {
+func (bc *Blockchain) FindTransaction(ID *hashx.Hash) (*Transaction, error) {
 	bci := bc.Iterator()
 
 	for {
@@ -326,6 +334,10 @@ func (bc *Blockchain) GetBestHeight() int32 {
 		return 0
 	}
 
+	if lastBlockData == nil{
+		return 0
+	}
+
 	lastBlock = DeserializeBlock(lastBlockData)
 
 	return lastBlock.Height
@@ -339,9 +351,50 @@ func (bc *Blockchain) GetLastBlock() (*Block, error){
 		return nil, err
 	}
 
+	if lastBlockData == nil{
+		return nil, ErrorNoExistsAnyBlock
+	}
+
 	lastBlock = DeserializeBlock(lastBlockData)
 
 	return lastBlock, nil
+}
+
+// GetBlockHashes returns a list of hashes with beginHash and maxNum limit
+func (bc *Blockchain) GetBlockHashes(beginHash *hashx.Hash, stopHash hashx.Hash, maxNum int) ([]*hashx.Hash, error) {
+	var blocks []*hashx.Hash
+	bci := bc.Iterator()
+	err := bci.LocationHash(beginHash.CloneBytes())
+	if err != nil{
+		return nil, err
+	}
+
+	getCount := 0
+	for {
+		block := bci.Next()
+
+		h, err := block.GetHash()
+		if err != nil{
+			return nil, err
+		}
+
+		if stopHash.IsEqual(h){
+			break
+		}
+
+		blocks = append(blocks, h)
+		getCount += 1
+
+		if len(block.PrevBlockHash) == 0 {
+			break
+		}
+
+		if getCount >= maxNum{
+			break
+		}
+	}
+
+	return blocks, nil
 }
 
 // Iterator returns a BlockchainIterator

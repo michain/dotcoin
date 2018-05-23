@@ -38,10 +38,10 @@ func localSingleSend(node *Node) {
 				if conn == nil{
 					logx.Warn("localSingleSend getConnBtAddr is nil", raw.FromAddr)
 				}else{
-					WriteConnRequest(node.seedConn, r)
+					WriteConnRequest(conn, r)
 					lock.Lock()
 					sendPackets[r.ID] = append(sendPackets[r.ID], &Packet{
-						Addr: node.seedAddr,
+						Addr: raw.FromAddr,
 					})
 					lock.Unlock()
 					n++

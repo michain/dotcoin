@@ -9,35 +9,62 @@ import (
 	"log"
 	"time"
 	"github.com/michain/dotcoin/protocol"
-	"github.com/michain/dotcoin/peer"
 )
 
-const nodeID = "3eb456d086f34118925793496cd20945"
+const genNodeID = "3eb456d086f34118925793496cd20945"
+var genServer *Server
 var fromAddress = "16KKFgx41SEi2YwfCcJTroENrndeNoSYL7"
+
+const NodeID_1 = "1eb456d086f34118925793496cd20945"
+const NodeID_2 = "2eb456d086f34118925793496cd20945"
+var Server_1 *Server
+var Server_2 *Server
+
+const genAddr = "127.0.0.1:2398"
+const Addr1 = "127.0.0.1:2491"
+const Addr2 = "127.0.0.1:2492"
 
 
 func init(){
-	nodeID := "3eb456d086f34118925793496cd20945"
-	err := initServer(nodeID, "", true)
+	var err error
+	genServer, err = initServer(genNodeID, "", genAddr, genAddr, true)
 	if err!=nil{
 		fmt.Println(err)
 		os.Exit(-1)
+	}else{
+		//start sync loop
+		go genServer.SyncManager.StartSync()
+		fmt.Println("Genesis server start", genServer.NodeID)
+	}
+
+	Server_1, err = initServer(NodeID_1, "", Addr1, genAddr, false)
+	if err!=nil{
+		fmt.Println(err)
+		os.Exit(-1)
+	}else{
+		//start sync loop
+		go Server_1.SyncManager.StartSync()
+		fmt.Println("Server_1 server start", Server_1.NodeID)
+	}
+
+	Server_2, err = initServer(NodeID_2, "", Addr2, Addr1, false)
+	if err!=nil{
+		fmt.Println(err)
+		os.Exit(-1)
+	}else{
+		//start sync loop
+		go Server_2.SyncManager.StartSync()
+		fmt.Println("Server_2 server start", Server_2.NodeID)
 	}
 }
 
 
 func Test_StartPeer(t *testing.T){
-	var seed = "127.0.0.1:2398"
-	//var pnode1 = "127.0.0.1:2391"
-	//var pnode1_1 = "127.0.0.1:2392"
-	var pnode2 = "127.0.0.1:2491"
-	var pnode2_1 = "127.0.0.1:2492"
+
+	var err error
 
 	go func() {
-		var p *peer.Peer
-		p = peer.NewPeer(seed, "", NewMessageHandler())
-
-		err := p.StartListen()
+		genServer.listenPeer()
 		if err != nil {
 			t.Error("Seed Peer start error", err)
 		} else {
@@ -45,10 +72,9 @@ func Test_StartPeer(t *testing.T){
 		}
 	}()
 
-	/*go func() {
-		var p *peer.Peer
-		p = peer.NewPeer(pnode1, seed, NewMessageHandler())
-		err := p.StartListen()
+	go func() {
+		time.Sleep(time.Second * 1)
+		Server_1.listenPeer()
 		if err != nil {
 			t.Error("pnode1 Peer start error", err)
 		} else {
@@ -57,21 +83,8 @@ func Test_StartPeer(t *testing.T){
 	}()
 
 	go func() {
-		var p *peer.Peer
-		p = peer.NewPeer(pnode1_1, pnode1, NewMessageHandler())
-		err := p.StartListen()
-		if err != nil {
-			t.Error("pnode1_1 Peer start error", err)
-		} else {
-			t.Log("pnode1_1 Peer start success")
-		}
-	}()
-*/
-
-	go func() {
-		var p *peer.Peer
-		p = peer.NewPeer(pnode2, seed, NewMessageHandler())
-		err := p.StartListen()
+		time.Sleep(time.Second * 2)
+		Server_2.listenPeer()
 		if err != nil {
 			t.Error("pnode2 Peer start error", err)
 		} else {
@@ -79,29 +92,18 @@ func Test_StartPeer(t *testing.T){
 		}
 	}()
 
-	var p_2_1 *peer.Peer
-	go func() {
-		var err error
-		p_2_1 = peer.NewPeer(pnode2_1, pnode2, NewMessageHandler())
-		err = p_2_1.StartListen()
-		if err != nil {
-			t.Error("pnode2_1 Peer start error", err)
-		} else {
-			t.Log("pnode2_1 Peer start success")
-		}
-	}()
-
-	go func(){
+	/*go func(){
 		time.Sleep(time.Second * 3)
 		msg := protocol.NewMsgAddr()
 		msg.AddrList = []string{"127.0.0.1:1", "127.0.0.1:2", "127.0.0.1:3"}
 		p_2_1.BroadcastMessage(msg)
-	}()
+	}()*/
 
 	go func(){
-		time.Sleep(time.Second * 3)
-		msg := protocol.NewMsgVersion(curBlockChain.GetBestHeight())
-		p_2_1.PushVersion(msg)
+		time.Sleep(time.Second * 5)
+		msg := protocol.NewMsgVersion(Server_1.BlockChain.GetBestHeight())
+		Server_1.Peer.PushVersion(msg)
+
 
 
 		/*iv := protocol.NewInvInfo(protocol.InvTypeTx, chainhash.ZeroHash())
@@ -124,17 +126,17 @@ func Test_StartPeer(t *testing.T){
 func Test_runMining(t *testing.T){
 	//add tx
 
-	fromWallet := curWallets.GetWallet(fromAddress)
+	fromWallet := genServer.Wallets.GetWallet(fromAddress)
 	if fromWallet  == nil{
 		fmt.Println("not exists [from] address")
 		os.Exit(-1)
 	}
 
-	to := curWallets.CreateWallet().GetStringAddress()
-	tx := chain.NewUTXOTransaction(fromWallet, to, 1, curBlockChain.GetUTXOSet())
+	to := genServer.Wallets.CreateWallet().GetStringAddress()
+	tx := chain.NewUTXOTransaction(fromWallet, to, 1, genServer.BlockChain.GetUTXOSet())
 	fmt.Println("NewUTXOTransaction", tx.ID, tx.StringHash())
 	//add TX to mempool
-	_, err := curTXMemPool.MaybeAcceptTransaction(tx, true, true)
+	_, err := genServer.TXMemPool.MaybeAcceptTransaction(tx, true, true)
 	if err != nil{
 		fmt.Println(err)
 	}
@@ -147,15 +149,15 @@ func Test_runMining(t *testing.T){
 	logx.Debugf("End Range TxPool")
 	*/
 
-	block, err := runMining(curBlockChain)
+	block, err := runMining(genServer)
 	if err != nil{
 		log.Panic("Mining err", err)
 		return
 	}
 
-	fmt.Println(fromAddress, "Balance", curBlockChain.GetBalance(fromAddress))
+	fmt.Println(fromAddress, "Balance", genServer.BlockChain.GetBalance(fromAddress))
 
-	lastBlock, err := curBlockChain.GetLastBlock()
+	lastBlock, err := genServer.BlockChain.GetLastBlock()
 	if err != nil{
 		fmt.Println("GetLastBlock err", err)
 	}else{

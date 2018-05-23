@@ -5,8 +5,6 @@ import (
 )
 type MessageHandle interface {
 
-	SetPeer(p *Peer)
-
 	// OnGetAddr is invoked when a peer receives a getaddr message.
 	OnGetAddr(msg *protocol.MsgGetAddr)
 
@@ -18,4 +16,7 @@ type MessageHandle interface {
 
 	// OnVersion is invoked when a peer receives an ver message
 	OnVersion(msg *protocol.MsgVersion)
+
+	// OnGetBlocks is invoked when a peer receives an getblocks message
+	OnGetBlocks(msg *protocol.MsgGetBlocks)
 }

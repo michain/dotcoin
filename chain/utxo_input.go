@@ -3,14 +3,14 @@ package chain
 import (
 	"bytes"
 	"github.com/michain/dotcoin/wallet"
-	"github.com/michain/dotcoin/config/chainhash"
 	"strconv"
+	"github.com/michain/dotcoin/util/hashx"
 )
 
 // OutPoint defines a dotcoin data type that is used to track previous
 // transaction outputs.
 type OutPoint struct {
-	Hash  chainhash.Hash
+	Hash  hashx.Hash
 	Index int
 }
 
@@ -20,7 +20,7 @@ func (o OutPoint) StringHash() string {
 
 // NewOutPoint returns a new dotcoin transaction outpoint point with the
 // provided hash and index.
-func NewOutPoint(hash *chainhash.Hash, index int) *OutPoint {
+func NewOutPoint(hash *hashx.Hash, index int) *OutPoint {
 	return &OutPoint{
 		Hash:  *hash,
 		Index: index,
@@ -29,9 +29,9 @@ func NewOutPoint(hash *chainhash.Hash, index int) *OutPoint {
 
 // String returns the OutPoint in the human-readable form "hash:index".
 func (o OutPoint) String() string {
-	buf := make([]byte, 2*chainhash.HashSize+1, 2*chainhash.HashSize+1+10)
+	buf := make([]byte, 2*hashx.HashSize+1, 2*hashx.HashSize+1+10)
 	copy(buf, o.Hash.String())
-	buf[2*chainhash.HashSize] = ':'
+	buf[2*hashx.HashSize] = ':'
 	buf = strconv.AppendUint(buf, uint64(o.Index), 10)
 	return string(buf)
 }
