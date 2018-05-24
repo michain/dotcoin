@@ -4,8 +4,6 @@ import (
 	"io"
 	"fmt"
 	"net"
-	"sync/atomic"
-	"sync"
 	"bytes"
 	"encoding/binary"
 )
@@ -17,21 +15,8 @@ const (
 
 var HeadFlag uint32
 
-var connectCreateCount uint64
-var connectIndex uint64
-
-var (
-	connctionPool sync.Pool
-)
-
 func init() {
 	HeadFlag = 0x20180618
-	connctionPool = sync.Pool{
-		New: func() interface{} {
-			atomic.AddUint64(&connectCreateCount, 1)
-			return &Connection{lock: new(sync.RWMutex)}
-		},
-	}
 }
 
 type HeadInfo struct {
@@ -60,15 +45,6 @@ func (h *HeadInfo) FromBytes(b []byte) {
 	binary.Read(buf, binary.LittleEndian, &h.data_len)
 }
 
-type Connection struct {
-	ConnIndex  int64
-	lock       *sync.RWMutex
-	conn       net.Conn
-	Head       *HeadInfo
-	flagBuf	    []byte
-	headBuf    []byte
-	BodyString string
-}
 
 //readHeadFlag read head flag message with HeadFlagLength
 func readHeadFlag(conn net.Conn) (uint32, error){
