@@ -112,14 +112,14 @@ func (manager *SyncManager) handleMsgVersion(msg *protocol.MsgVersion){
 		requestedTxns:   make(map[hashx.Hash]struct{}),
 		requestedBlocks: make(map[hashx.Hash]struct{}),
 	}
-	if manager.chain.GetBestHeight() <= msg.LastBlockHeight  {
+	if manager.chain.GetBestHeight() < msg.LastBlockHeight  {
 		hashStop := hashx.ZeroHash()
 		if  manager.chain.GetBestHeight() > 0 {
 			//send getblocks message
 			block, err := manager.chain.GetLastBlock()
 			if err != nil {
 				//TODO log get last block err
-				logx.Debug("handleMsgVersion::GetLastBlock error", err)
+				logx.Error("handleMsgVersion::GetLastBlock error", err)
 				return
 			}
 			hashStop = block.GetHash()
@@ -132,6 +132,9 @@ func (manager *SyncManager) handleMsgVersion(msg *protocol.MsgVersion){
 		msgSend := protocol.NewMsgVersion(manager.chain.GetBestHeight())
 		msgSend.AddrFrom = msg.GetFromAddr()
 		manager.peer.PushVersion(msgSend)
+	}else{
+		//TODO nothing to do?
+		logx.Debug("handleMsgVersion: it's same height, so nothing to do")
 	}
 }
 
@@ -184,7 +187,7 @@ func (manager *SyncManager) handleMsgGetData(msg *protocol.MsgGetData){
 
 // handleMsgGetData handles getdata messages from other peer.
 func (manager *SyncManager) handleMsgBlock(msg *protocol.MsgBlock){
-	logx.Debugf("SyncManager.handleMsgBlock peer:%v msg:%v", manager.peer.GetListenAddr(), *msg)
+	logx.Debugf("SyncManager.handleMsgBlock peer:%v msg:%v txs:%v", manager.peer.GetListenAddr(), msg.Block.GetHash(), len(msg.Block.Transactions))
 	hash := msg.Block.GetHash()
 
 	// Add the block to the known inventory for the peer.
@@ -198,5 +201,7 @@ func (manager *SyncManager) handleMsgBlock(msg *protocol.MsgBlock){
 
 
 	// Add block to block chain
-	manager.chain.ProcessBlock(msg.Block)
+	isMain, isOrphanBlock, err:=manager.chain.ProcessBlock(msg.Block)
+	logx.Info("SyncManager.handleMsgBlock ProcessBlock", isMain, isOrphanBlock, err)
+
 }

@@ -32,7 +32,7 @@ func (handler *MessageHandler) OnAddr(msg *protocol.MsgAddr) {
 
 // OnInv is invoked when a peer receives an inv message.
 func (handler *MessageHandler) OnInv(msg *protocol.MsgInv) {
-	logx.DevPrintf("messageHandler OnInv peer:%v remote:%v invs:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.InvList[0])
+	logx.DevPrintf("messageHandler OnInv peer:%v remote:%v invs:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, len(msg.InvList))
 	if len(msg.InvList) > 0 {
 		handler.server.SyncManager.HandleMessage(msg)
 	}

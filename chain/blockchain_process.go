@@ -9,6 +9,7 @@ import (
 )
 
 func (bc *Blockchain) maybeAcceptBlock(block *Block) (bool, error){
+	logx.Infof("Blockchain maybeAcceptBlock block %v", block.GetHash())
 	//TODO check block validate
 	bc.AddBlock(block)
 	return true, nil
@@ -114,17 +115,19 @@ func (bc *Blockchain) ProcessBlock(block *Block)(bool, bool, error){
 
 	//TODO checkBlockSanity
 
-	//check prevHash, if not exists, add to orphanBlocks
-	prevHash := block.GetPrevHash()
-	prevHashExists, err := bc.HaveBlock(prevHash)
-	if err != nil {
-		logx.Errorf("Block Processing check have block for prevhash error %v %v", err, prevHash)
-		return false, false, err
-	}
-	if !prevHashExists {
-		logx.Infof("Block Processing Adding orphan block %v with parent %v", blockHash, prevHash)
-		bc.addOrphanBlock(block)
-		return false, true, nil
+	//check prevHash, if not exists, add to orphanBlocks\
+	if block.Height != 0 {
+		prevHash := block.GetPrevHash()
+		prevHashExists, err := bc.HaveBlock(prevHash)
+		if err != nil {
+			logx.Errorf("Block Processing check have block for prevhash error %v %v", err, prevHash)
+			return false, false, err
+		}
+		if !prevHashExists {
+			logx.Infof("Block Processing Adding orphan block %v with parent %v", blockHash, prevHash)
+			bc.addOrphanBlock(block)
+			return false, true, nil
+		}
 	}
 
 	//add block into chain

@@ -82,6 +82,7 @@ func CreateBlockchain(isGenesisNode bool, address, nodeID string) *Blockchain {
 		chainLock:new(sync.RWMutex),
 		orphanLock:new(sync.RWMutex),
 		orphanBlocks:make(map[hashx.Hash]*Block),
+		prevOrphanBlocks:make(map[hashx.Hash][]*Block),
 	}
 
 	fmt.Println("CreateBlockchain Success!")
@@ -120,6 +121,7 @@ func LoadBlockChain(nodeID string) (*Blockchain, error) {
 		chainLock:new(sync.RWMutex),
 		orphanLock:new(sync.RWMutex),
 		orphanBlocks:make(map[hashx.Hash]*Block),
+		prevOrphanBlocks:make(map[hashx.Hash][]*Block),
 	}
 
 	return &bc, nil
@@ -146,9 +148,6 @@ func (bc *Blockchain) addOrphanBlock(block *Block){
 // AddBlock add the block into the blockchain
 // save to bolt, update LastBlockHash
 func (bc *Blockchain) AddBlock(block *Block) {
-	bc.chainLock.Lock()
-	defer bc.chainLock.Unlock()
-
 	err := bc.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(storage.BoltBlocksBucket))
 		blockInDb := b.Get(block.Hash)
@@ -163,11 +162,18 @@ func (bc *Blockchain) AddBlock(block *Block) {
 			log.Panic(err)
 		}
 
+		var bestHeight int32
 		lastHash := b.Get([]byte("l"))
 		lastBlockData := b.Get(lastHash)
-		lastBlock := DeserializeBlock(lastBlockData)
+		if lastBlockData == nil{
+			bestHeight = 0
+		}else{
+			lastBlock := DeserializeBlock(lastBlockData)
+			bestHeight = lastBlock.Height
+		}
 
-		if block.Height > lastBlock.Height {
+
+		if block.Height > bestHeight {
 			err = b.Put([]byte(storage.BoltLastHashKey), block.Hash)
 			if err != nil {
 				log.Panic(err)

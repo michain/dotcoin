@@ -9,4 +9,5 @@ func init(){
 	gob.Register(MsgVersion{})
 	gob.Register(MsgGetBlocks{})
 	gob.Register(MsgGetData{})
+	gob.Register(MsgBlock{})
 }
