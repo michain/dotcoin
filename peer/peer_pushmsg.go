@@ -53,7 +53,7 @@ func (p *Peer) PushGetBlocks(msg *protocol.MsgGetBlocks) error{
 }
 
 func (p *Peer) PushBlock(msg *protocol.MsgBlock) error{
-	logx.DevPrintf("Peer.PushBlock peer:%v msg:%v", p.GetListenAddr(), msg)
+	logx.DevPrintf("Peer.PushBlock peer:%v remote:%v msg:%v trans:%d", p.GetListenAddr(), msg.GetFromAddr(), msg.Block.GetHash(), len(msg.Block.Transactions))
 	p.SendSingleMessage(msg)
 	return nil
 }

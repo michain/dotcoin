@@ -52,6 +52,7 @@ type Server struct{
 	AddrManager *AddrManager
 	SyncManager *sync.SyncManager
 	Peer *peer.Peer
+	IsGenesisNode bool
 	minerAddress string
 
 }
@@ -82,7 +83,7 @@ func (s *Server) listenRPCServer() {
 }
 
 func (s *Server) listenPeer(){
-	if s.SeedAddress == ""{
+	if !s.IsGenesisNode && s.SeedAddress == ""{
 		log.Fatalf("listenPeer error: SeedAddress is nil")
 	}
 	logx.Debugf("listenPeer begin listen:%v seed:%v", s.ListenAddress, s.SeedAddress)
@@ -97,6 +98,7 @@ func initServer(nodeID, minerAddr string, listenAddr, seedAddr string, isGenesis
 	serv.ListenAddress = listenAddr
 	serv.SeedAddress = seedAddr
 	serv.NodeID = nodeID
+	serv.IsGenesisNode = isGenesisNode
 	var err error
 	isFirstInit := false
 

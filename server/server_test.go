@@ -27,7 +27,7 @@ const Addr2 = "127.0.0.1:2492"
 
 func init(){
 	var err error
-	genServer, err = initServer(genNodeID, "", genAddr, genAddr, true)
+	genServer, err = initServer(genNodeID, "", genAddr, "", true)
 	if err!=nil{
 		fmt.Println(err)
 		os.Exit(-1)

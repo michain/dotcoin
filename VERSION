@@ -1,5 +1,12 @@
 # DotCoin
 
+## version 0.1.1
+* Replace connx for gob.Encode(conn)
+* Add Blockchain process new block
+* Add Blockchain orphanBlocks
+* Add Blockchain prevOrphanBlocks
+* fixed some bug
+* 2018-05-24 17:00
 
 ## version 0.1
 * Add Server struct

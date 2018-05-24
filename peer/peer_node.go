@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"errors"
+	"github.com/michain/dotcoin/connx"
 )
 
 var lock = &sync.Mutex{}
@@ -226,6 +227,10 @@ func (node *Node) receiveMessage(conn net.Conn, isSeed bool, needStepBack bool) 
 
 		r, err:=ReadConnRequest(conn)
 		if err != nil {
+			if err == connx.ErrorNotMatchHeadFlag{
+				//not match head flag, must continue loop
+				continue
+			}
 			if err != io.EOF {
 				fmt.Println("decode message error：", err)
 			}
@@ -285,7 +290,7 @@ func (node *Node) connectSeed(addr string) error {
 
 	node.seedConn = conn
 	node.seedAddr = addr
-	fmt.Printf("connect to the seed %s successfully\n", addr)
+	fmt.Printf("connect to the seed %s to %s successfully\n", node.listenAddr, addr)
 	return nil
 }
 

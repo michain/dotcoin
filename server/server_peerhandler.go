@@ -60,7 +60,7 @@ func (handler *MessageHandler) OnGetData(msg *protocol.MsgGetData){
 }
 
 // OnBlock is invoked when a peer receives an block message
-func (handler *MessageHandler) OnBlock(msg *protocol.MsgGetData){
+func (handler *MessageHandler) OnBlock(msg *protocol.MsgBlock){
 	logx.DevPrintf("messageHandler OnBlock peer:%v remote:%v version:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.ProtocolVersion)
 	handler.server.SyncManager.HandleMessage(msg)
 }

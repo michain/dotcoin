@@ -112,6 +112,11 @@ func (b *Block) HashTransactions() []byte {
 	return mTree.RootNode.Data
 }
 
+// SetHeight sets the height of the block
+func (b *Block) SetHeight(height int32) {
+	b.Height = height
+}
+
 func (b *Block) GetHash() (*hashx.Hash) {
 	hash,_ := hashx.NewHash(b.Hash)
 	return hash

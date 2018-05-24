@@ -15,7 +15,7 @@ const(
 	BoltTXMemPool = "txmempool"
 )
 
-var ErrorBlockNotFount = errors.New("Block is not found.")
+var ErrorBlockNotFount = errors.New("Block is not found")
 
 
 // getDBFileName get dbfile's name with NodeID
@@ -51,11 +51,13 @@ func SaveBlock(db *bolt.DB, blockHash, blockData []byte) error{
 	return err
 }
 
+// GetBlock query block data with block hash
+// if not exists, return ErrorBlockNotFount
 func GetBlock(db *bolt.DB, blockHash []byte)(blockData []byte, err error){
 	err = db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(BoltBlocksBucket))
 
-		blockData := b.Get(blockHash)
+		blockData = b.Get(blockHash)
 
 		if blockData == nil {
 			return ErrorBlockNotFount

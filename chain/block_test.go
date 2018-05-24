@@ -62,7 +62,7 @@ func init(){
 		return
 	}
 	if godBlockChain == nil{
-		godBlockChain = CreateBlockchain(string(god.GetAddress()), godNodeID)
+		godBlockChain = CreateBlockchain(true, string(god.GetAddress()), godNodeID)
 	}
 }
 

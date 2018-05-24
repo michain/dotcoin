@@ -172,6 +172,7 @@ func (manager *SyncManager) handleMsgGetData(msg *protocol.MsgGetData){
 				continue
 			}
 			msgSend := protocol.NewMsgBlock(block)
+			msgSend.AddrFrom = msg.GetFromAddr()
 			err = manager.peer.PushBlock(msgSend)
 		default:
 			logx.Warnf("SyncManager.handleMsgGetData Unknown type in getdata request %d",

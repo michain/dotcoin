@@ -12,7 +12,7 @@ import (
 	"github.com/michain/dotcoin/wallet"
 	"github.com/michain/dotcoin/util/hashx"
 	"sync"
-	"github.com/michain/dotcoin/logx"
+	"encoding/hex"
 )
 
 const genesisCoinbaseData = "The Times 15/April/2018 for my 35th birthday!"
@@ -26,7 +26,6 @@ const (
 
 var ErrorBlockChainNotFount = errors.New("blockchain is not found")
 var ErrorNoExistsAnyBlock = errors.New("not exists any block")
-var ErrorNoExistsBlock = errors.New("not exists block")
 
 // Blockchain implements interactions with a DB
 type Blockchain struct {
@@ -36,6 +35,9 @@ type Blockchain struct {
 
 	orphanLock   *sync.RWMutex
 	orphanBlocks map[hashx.Hash]*Block
+
+	// previous hash index for faster lookups
+	prevOrphanBlocks map[hashx.Hash][]*Block
 }
 
 // CreateBlockchain creates a new blockchain with genesisBlock
@@ -128,57 +130,17 @@ func (bc *Blockchain) GetStorageDB() *bolt.DB {
 	return bc.db
 }
 
-// ProcessBlock handling new block into chain
-// return value: IsMainChain, IsOrphanBlock, error
-func (bc *Blockchain) ProcessBlock(block *Block)(bool, bool, error){
-	bc.chainLock.Lock()
-	defer bc.chainLock.Unlock()
 
-	blockHash := block.GetHash()
-	logx.Tracef("Blockchain Processing block %v", blockHash)
-
-	// The block must not already exist in the chain.
-	exists, err := bc.HaveBlock(blockHash)
-	if err != nil {
-		logx.Errorf("Blockchain Processing check have block error %v %v", err, blockHash)
-		return false, false, err
-	}
-	if exists {
-		str := fmt.Sprintf("Blockchain Processing already have block %v", blockHash)
-		return false, false, errors.New(str)
-	}
-
-	// The block must not already exist as an orphan.
-	if _, exists := bc.orphanBlocks[*blockHash]; exists {
-		str := fmt.Sprintf("Blockchain Processing already have block (orphan) %v", blockHash)
-		return false, false, errors.New(str)
-	}
-
-	//TODO checkBlockSanity
-
-	//check prevHash, if not exists, add to orphanBlocks
-	prevHash := block.GetPrevHash()
-	prevHashExists, err := bc.HaveBlock(prevHash)
-	if err != nil {
-		logx.Errorf("Blockchain Processing check have block for prevhash error %v %v", err, prevHash)
-		return false, false, err
-	}
-	if !prevHashExists {
-		logx.Infof("Blockchain Processing Adding orphan block %v with parent %v", blockHash, prevHash)
-		bc.addOrphanBlock(block)
-		return false, true, nil
-	}
-
-	//add block into chain
-	bc.AddBlock(block)
-	return true, false, nil
-}
 
 // addOrphanBlock add block into orphan blocks
 func (bc *Blockchain) addOrphanBlock(block *Block){
 	bc.orphanLock.Lock()
 	defer bc.orphanLock.Unlock()
 	bc.orphanBlocks[*block.GetHash()] = block
+
+	// Add to previous hash index for faster lookups.
+	prevHash := block.GetPrevHash()
+	bc.prevOrphanBlocks[*prevHash] = append(bc.prevOrphanBlocks[*prevHash], block)
 }
 
 // AddBlock add the block into the blockchain
@@ -240,9 +202,7 @@ func (bc *Blockchain) GetBlock(blockHash []byte) (*Block, error) {
 	if err != nil{
 		return nil, err
 	}
-	if blockData == nil{
-		return nil,ErrorNoExistsBlock
-	}
+
 	block = DeserializeBlock(blockData)
 	return block, err
 }
@@ -336,7 +296,7 @@ func (bc *Blockchain) ListBlockHashs(){
 	for {
 		block := bci.Next()
 		if len(block.PrevBlockHash) != 0 {
-			fmt.Println("ListBlockHashs", fmt.Sprintf("%x", block.PrevBlockHash), fmt.Sprintf("%x", block.Hash))
+			fmt.Println("ListBlockHashs", "prevhash:", hex.EncodeToString(block.PrevBlockHash), "hash:", hex.EncodeToString(block.Hash))
 		}else{
 			break
 		}
@@ -453,6 +413,8 @@ func (bc *Blockchain) GetBlockHashes(beginHash *hashx.Hash, stopHash hashx.Hash,
 	getCount := 0
 	for {
 		block := bci.Next()
+
+		fmt.Println("GetBlockHashes", block.GetHash(), hex.EncodeToString(block.Hash), hex.EncodeToString(block.GetHash().CloneBytes()))
 
 		h := block.GetHash()
 
