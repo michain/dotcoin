@@ -6,11 +6,16 @@ import (
 	"fmt"
 	"errors"
 	"github.com/labstack/gommon/log"
+	"math/big"
 )
 
 func (bc *Blockchain) maybeAcceptBlock(block *Block) (bool, error){
 	logx.Infof("Blockchain maybeAcceptBlock block %v", block.GetHash())
-	//TODO check block validate
+	//check block validate
+	err := bc.ValidateBlock(block, big.NewInt(int64(block.Difficult)))
+	if err != nil{
+		return false, err
+	}
 	bc.AddBlock(block)
 	return true, nil
 }

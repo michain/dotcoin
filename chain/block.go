@@ -14,6 +14,7 @@ import (
 
 const genesisReward = 100
 
+
 // Block represents a block in the blockchain
 type Block struct {
 	Timestamp     int64

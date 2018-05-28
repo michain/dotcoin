@@ -20,6 +20,7 @@ const genesisCoinbaseData = "The Times 15/April/2018 for my 35th birthday!"
 const (
 	defaultNonce = 0
 	blockDefaultDifficult = 10
+	MaxBlockBaseSize = 1000000
 )
 
 
