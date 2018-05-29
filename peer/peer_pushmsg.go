@@ -3,7 +3,6 @@ package peer
 import (
 	"github.com/michain/dotcoin/protocol"
 	"math/rand"
-	"github.com/michain/dotcoin/logx"
 )
 
 func (p *Peer) PushAddrMsg(addresses []string) error {
@@ -38,7 +37,7 @@ func (p *Peer) PushAddrMsg(addresses []string) error {
 }
 
 func (p *Peer) PushVersion(msg *protocol.MsgVersion) error{
-	logx.DevPrintf("Peer.PushVersion %v", msg)
+	//logx.DevPrintf("Peer.PushVersion %v", msg)
 	if msg.AddrFrom == ""{
 		msg.AddrFrom = p.GetSeedAddr()
 	}
@@ -47,13 +46,13 @@ func (p *Peer) PushVersion(msg *protocol.MsgVersion) error{
 }
 
 func (p *Peer) PushGetBlocks(msg *protocol.MsgGetBlocks) error{
-	logx.DevPrintf("Peer.PushGetBlocks peer:%v msg:%v", p.GetListenAddr(), msg)
+	//logx.DevPrintf("Peer.PushGetBlocks peer:%v msg:%v", p.GetListenAddr(), msg)
 	p.SendSingleMessage(msg)
 	return nil
 }
 
 func (p *Peer) PushBlock(msg *protocol.MsgBlock) error{
-	logx.DevPrintf("Peer.PushBlock peer:%v remote:%v msg:%v trans:%d", p.GetListenAddr(), msg.GetFromAddr(), msg.Block.GetHash(), len(msg.Block.Transactions))
+	//logx.DevPrintf("Peer.PushBlock peer:%v remote:%v msg:%v trans:%d", p.GetListenAddr(), msg.GetFromAddr(), msg.Block.GetHash(), len(msg.Block.Transactions))
 	p.SendSingleMessage(msg)
 	return nil
 }

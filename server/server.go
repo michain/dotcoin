@@ -8,13 +8,13 @@ import (
 	"net/rpc/jsonrpc"
 	"github.com/michain/dotcoin/peer"
 	"github.com/michain/dotcoin/protocol"
-	"github.com/michain/dotcoin/mempool"
 	"github.com/michain/dotcoin/wallet"
 	"github.com/michain/dotcoin/chain"
 	"log"
 	"github.com/michain/dotcoin/logx"
 	"errors"
 	"github.com/michain/dotcoin/util/uuid"
+	"github.com/michain/dotcoin/mempool"
 )
 
 /*var curNodeID string

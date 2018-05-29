@@ -2,7 +2,6 @@ package chain
 
 import (
 	"math/big"
-	"bytes"
 	"github.com/michain/dotcoin/util/hashx"
 )
 
@@ -20,14 +19,14 @@ func (bc *Blockchain)ValidateBlock(block *Block, powLimit *big.Int) error {
 
 	// check max block payload is bigger than limit.
 	if numTx > MaxBlockBaseSize {
-		return ErrBlockTooManyTransaction
+		return ErrBlockTooManyTransactions
 	}
 
 	//TODO check max block's byte size
 
 	// The first transaction in a block must be a coinbase.
 	transactions := block.Transactions
-	if transactions[0].IsCoinBase() {
+	if !transactions[0].IsCoinBase() {
 		return ErrFirstTxNotCoinbase
 	}
 
@@ -46,11 +45,11 @@ func (bc *Blockchain)ValidateBlock(block *Block, powLimit *big.Int) error {
 		}
 	}
 
-	// check merkleRoot
-	merkleRoot := block.HashTransactions()
+	// TODO check merkleRoot
+	/*merkleRoot := block.HashTransactions()
 	if bytes.Compare(block.MerkleRoot, merkleRoot) != 0{
 		return ErrBlockBadMerkleRoot
-	}
+	}*/
 
 	// Check for duplicate transactions.
 	existingTxHashes := make(map[hashx.Hash]struct{})

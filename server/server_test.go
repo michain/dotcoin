@@ -9,11 +9,13 @@ import (
 	"log"
 	"time"
 	"github.com/michain/dotcoin/protocol"
+	"github.com/michain/dotcoin/util/hashx"
+	"encoding/hex"
 )
 
 const genNodeID = "3eb456d086f34118925793496cd20945"
 var genServer *Server
-var fromAddress = "16KKFgx41SEi2YwfCcJTroENrndeNoSYL7"
+var fromAddress = "1HCGY3WD5UCFNxQyLodoPvSwhZDUQu3kCn"
 
 const NodeID_1 = "1eb456d086f34118925793496cd20945"
 const NodeID_2 = "2eb456d086f34118925793496cd20945"
@@ -123,8 +125,33 @@ func Test_StartPeer(t *testing.T){
 
 }
 
+
+func Test_FindTransaction(t *testing.T){
+	txByteID, _ := hex.DecodeString("38326533363661633739653136633464353133356632376265333234623131356230633037343133616362373862633665313237613331656332326330306634")
+	txID, _:=hashx.NewHash(txByteID)
+	fmt.Println(genServer.BlockChain.FindTransaction(txID))
+}
+
+func Test_ShowInfo(t *testing.T){
+
+	bci:=genServer.BlockChain.Iterator()
+	i := 0
+	for{
+		i += 1
+		block := bci.Next()
+		if block != nil{
+			fmt.Println(block)
+		}else{
+			break
+		}
+	}
+}
+
 func Test_runMining(t *testing.T){
 	//add tx
+
+	fmt.Println(genServer.Wallets.Wallets)
+	genServer.BlockChain.ListBlockHashs()
 
 	fromWallet := genServer.Wallets.GetWallet(fromAddress)
 	if fromWallet  == nil{
@@ -133,8 +160,8 @@ func Test_runMining(t *testing.T){
 	}
 
 	to := genServer.Wallets.CreateWallet().GetStringAddress()
-	tx := chain.NewUTXOTransaction(fromWallet, to, 1, genServer.BlockChain.GetUTXOSet())
-	fmt.Println("NewUTXOTransaction", tx.ID, tx.StringHash())
+	tx := chain.NewUTXOTransaction(fromWallet, to, 1, genServer.BlockChain.GetUTXOSet(), genServer.TXMemPool)
+	fmt.Println("NewUTXOTransaction outer", tx.ID, tx.Inputs[0].PreviousOutPoint.Hash)
 	//add TX to mempool
 	_, err := genServer.TXMemPool.MaybeAcceptTransaction(tx, true, true)
 	if err != nil{

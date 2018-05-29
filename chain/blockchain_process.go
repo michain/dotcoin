@@ -14,6 +14,7 @@ func (bc *Blockchain) maybeAcceptBlock(block *Block) (bool, error){
 	//check block validate
 	err := bc.ValidateBlock(block, big.NewInt(int64(block.Difficult)))
 	if err != nil{
+		logx.Infof("Blockchain maybeAcceptBlock  %v ValidateBlock error", block.GetHash(), err)
 		return false, err
 	}
 	bc.AddBlock(block)
@@ -120,7 +121,7 @@ func (bc *Blockchain) ProcessBlock(block *Block)(bool, bool, error){
 
 	//TODO checkBlockSanity
 
-	//check prevHash, if not exists, add to orphanBlocks\
+	//check prevHash, if not exists, add to orphanBlocks
 	if block.Height != 0 {
 		prevHash := block.GetPrevHash()
 		prevHashExists, err := bc.HaveBlock(prevHash)

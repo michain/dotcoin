@@ -40,12 +40,12 @@ func (tx Transaction) IsCoinBase() bool {
 func (tx Transaction) String() string {
 	var lines []string
 
-	lines = append(lines, fmt.Sprintf("--- Transaction %x:", tx.ID))
+	lines = append(lines, fmt.Sprintf("--- Transaction %v:", tx.ID))
 
 	for i, input := range tx.Inputs {
 
 		lines = append(lines, fmt.Sprintf("     Input %d:", i))
-		lines = append(lines, fmt.Sprintf("       TXID:         %x", input.PreviousOutPoint.Hash))
+		lines = append(lines, fmt.Sprintf("       TXID:         %v", input.PreviousOutPoint.Hash.String()))
 		lines = append(lines, fmt.Sprintf("       OutIndex:     %d", input.PreviousOutPoint.Index))
 		lines = append(lines, fmt.Sprintf("       Signature:    %x", input.Signature))
 		lines = append(lines, fmt.Sprintf("       PubKey:       %x", input.PubKey))
@@ -201,6 +201,7 @@ func NewCoinbaseTX(to, data string, reward int) *Transaction {
 	if data == ""{
 		data = util.GetRandData()
 	}
+	fmt.Println("NewCoinbaseTX RandData", data)
 	txin := NewTXInput(NewOutPoint(hashx.ZeroHash(), -1), nil, []byte(data))
 	txout := NewTXOutput(reward, to)
 	fmt.Println(txout)
@@ -212,12 +213,12 @@ func NewCoinbaseTX(to, data string, reward int) *Transaction {
 }
 
 // NewUTXOTransaction creates a new transaction
-func NewUTXOTransaction(fromWallet *wallet.Wallet, to string, amount int, UTXOSet *UTXOSet) *Transaction {
+func NewUTXOTransaction(fromWallet *wallet.Wallet, to string, amount int, UTXOSet *UTXOSet, txPool TxPool) *Transaction {
 	var inputs []TXInput
 	var outputs []TXOutput
 
 	pubKeyHash := wallet.HashPublicKey(fromWallet.PublicKey)
-	acc, validOutputs := UTXOSet.FindSpendableOutputs(pubKeyHash, amount)
+	acc, validOutputs := UTXOSet.FindSpendableOutputs(pubKeyHash, amount, txPool)
 
 	if acc < amount {
 		log.Panic("ERROR: Not enough funds")
@@ -227,6 +228,7 @@ func NewUTXOTransaction(fromWallet *wallet.Wallet, to string, amount int, UTXOSe
 	for txid, outs := range validOutputs {
 		var txID hashx.Hash
 		err := hashx.Decode(&txID, txid)
+		fmt.Println("NewUTXOTransaction", txID, txid)
 		if err != nil {
 			log.Panic(err)
 		}

@@ -27,6 +27,10 @@ func runMining(s *Server) (*chain.Block, error){
 	MineTransactions:
 		var txs []*chain.Transaction
 
+		//reward miningAddress in this node
+		cbTx := chain.NewCoinbaseTX(s.minerAddress, "", coinbaseReward)
+		txs = append(txs, cbTx)
+
 		for _, tx := range s.TXMemPool.TxDescs() {
 			if s.BlockChain.VerifyTransaction(tx) {
 				txs = append(txs, tx)
@@ -38,9 +42,6 @@ func runMining(s *Server) (*chain.Block, error){
 			return nil, ErrorAllTXInvalid
 		}
 
-		//reward miningAddress in this node
-		cbTx := chain.NewCoinbaseTX(s.minerAddress, "", coinbaseReward)
-		txs = append(txs, cbTx)
 
 		//rebuild utxo set
 		newBlock = s.BlockChain.MineBlock(txs)

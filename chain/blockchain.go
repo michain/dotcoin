@@ -105,8 +105,11 @@ func LoadBlockChain(nodeID string) (*Blockchain, error) {
 		return nil, ErrorBlockChainNotFount
 	}
 
+	var db *bolt.DB
+	var err error
+
 	var lastBlockHash []byte
-	db, err := bolt.Open(dbFile, 0600, nil)
+	db, err = bolt.Open(dbFile, 0600, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +155,6 @@ func (bc *Blockchain) AddBlock(block *Block) {
 	err := bc.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(storage.BoltBlocksBucket))
 		blockInDb := b.Get(block.Hash)
-
 		if blockInDb != nil {
 			return nil
 		}
@@ -164,7 +166,7 @@ func (bc *Blockchain) AddBlock(block *Block) {
 		}
 
 		var bestHeight int32
-		lastHash := b.Get([]byte("l"))
+		lastHash := b.Get([]byte(storage.BoltLastHashKey))
 		lastBlockData := b.Get(lastHash)
 		if lastBlockData == nil{
 			bestHeight = 0
@@ -174,7 +176,7 @@ func (bc *Blockchain) AddBlock(block *Block) {
 		}
 
 
-		if block.Height > bestHeight {
+		if block.Height >= bestHeight {
 			err = b.Put([]byte(storage.BoltLastHashKey), block.Hash)
 			if err != nil {
 				log.Panic(err)
@@ -192,6 +194,7 @@ func (bc *Blockchain) AddBlock(block *Block) {
 // HaveBlock check block hash exists
 func (bc *Blockchain) HaveBlock(blockHash *hashx.Hash) (bool, error){
 	b, err:=bc.GetBlock(blockHash.CloneBytes())
+
 	if err != nil{
 		if err == storage.ErrorBlockNotFount{
 			return false, nil
@@ -300,14 +303,17 @@ func (bc *Blockchain) FindUTXO() map[string][]TXOutput {
 // ListBlockHashs list println block's Hash and PrevBlockHash
 func (bc *Blockchain) ListBlockHashs(){
 	bci := bc.Iterator()
+	fmt.Println("ListBlockHashs begin")
 	for {
 		block := bci.Next()
-		if len(block.PrevBlockHash) != 0 {
+		//if block != nil && len(block.PrevBlockHash) != 0 {
+		if block != nil{
 			fmt.Println("ListBlockHashs", "prevhash:", hex.EncodeToString(block.PrevBlockHash), "hash:", hex.EncodeToString(block.Hash))
 		}else{
 			break
 		}
 	}
+	fmt.Println("ListBlockHashs end")
 }
 
 // SignTransaction signs inputs of a Transaction
@@ -331,6 +337,9 @@ func (bc *Blockchain) FindTransaction(ID *hashx.Hash) (*Transaction, error) {
 
 	for {
 		block := bci.Next()
+		if block == nil{
+			break
+		}
 		for _, tx := range block.Transactions {
 			if tx.ID.IsEqual(ID){
 				return tx, nil
@@ -355,7 +364,7 @@ func (bc *Blockchain) VerifyTransaction(tx *Transaction) bool {
 	for _, vin := range tx.Inputs {
 		prevTX, err := bc.FindTransaction(&vin.PreviousOutPoint.Hash)
 		if err != nil {
-			log.Panic(err)
+			log.Panic(err, vin.PreviousOutPoint.Hash.String())
 		}
 		prevTXs[prevTX.StringID()] = *prevTX
 	}

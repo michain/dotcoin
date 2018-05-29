@@ -5,18 +5,11 @@ import (
 	"bytes"
 	"log"
 	"os"
-	"fmt"
-	"math/rand"
+	"github.com/michain/dotcoin/util/uuid"
 )
 
 func GetRandData() string{
-	randData := make([]byte, 20)
-	_, err := rand.Read(randData)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	return fmt.Sprintf("%x", randData)
+	return uuid.NewV4().String()
 }
 
 // IntToHex converts an int64 to a byte array

@@ -202,6 +202,6 @@ func (manager *SyncManager) handleMsgBlock(msg *protocol.MsgBlock){
 
 	// Add block to block chain
 	isMain, isOrphanBlock, err:=manager.chain.ProcessBlock(msg.Block)
-	logx.Info("SyncManager.handleMsgBlock ProcessBlock", isMain, isOrphanBlock, err)
+	logx.Info("SyncManager.handleMsgBlock ProcessBlock ", isMain, isOrphanBlock, err)
 
 }

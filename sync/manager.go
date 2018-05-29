@@ -77,7 +77,7 @@ func (manager *SyncManager) haveInventory(inv *protocol.InvInfo) (bool, error) {
 		return manager.chain.HaveBlock(&inv.Hash)
 	case protocol.InvTypeTx:
 		//check tx-mempool
-		if manager.txMemPool.HaveTransaction(inv.Hash) {
+		if manager.txMemPool.HaveTransaction(inv.Hash.String()) {
 			return true, nil
 		}
 

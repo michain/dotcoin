@@ -259,14 +259,15 @@ func (mp *TxPool) haveTransaction(hash string) bool {
 // in the main pool or in the orphan pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) HaveTransaction(hash hashx.Hash) bool {
+func (mp *TxPool) HaveTransaction(hash string) bool {
 	// Protect concurrent access.
 	mp.mtx.RLock()
-	haveTx := mp.haveTransaction(hash.String())
+	haveTx := mp.haveTransaction(hash)
 	mp.mtx.RUnlock()
 
 	return haveTx
 }
+
 
 // removeTransaction is the internal function which implements the public
 // RemoveTransaction.  See the comment for RemoveTransaction for more details.

@@ -15,7 +15,8 @@ type UTXOSet struct {
 }
 
 // FindSpendableOutputs finds and returns unspent outputs to reference in inputs
-func (u UTXOSet) FindSpendableOutputs(pubkeyHash []byte, amount int) (int, map[string][]int) {
+// add check is in txmempool
+func (u UTXOSet) FindSpendableOutputs(pubkeyHash []byte, amount int, txPool TxPool) (int, map[string][]int) {
 	unspentOutputs := make(map[string][]int)
 	accumulated := 0
 	db := u.Blockchain.db
@@ -30,8 +31,10 @@ func (u UTXOSet) FindSpendableOutputs(pubkeyHash []byte, amount int) (int, map[s
 
 			for outIdx, out := range outs {
 				if out.IsLockedWithKey(pubkeyHash) && accumulated < amount {
-					accumulated += out.Value
-					unspentOutputs[txID] = append(unspentOutputs[txID], outIdx)
+					if !txPool.HaveTransaction(txID){
+						accumulated += out.Value
+						unspentOutputs[txID] = append(unspentOutputs[txID], outIdx)
+					}
 				}
 			}
 		}
