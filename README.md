@@ -21,8 +21,10 @@ A simple and integrity blockchain implementation in Golang
 * ping-pong
 * downstream nodes
 * JsonRPC server
-* *netsync*
-* *protocol*
+* netsync
+* protocol
+* *Chain switch*
+* *Auto difficulty*
 
 ## Tips
 Until now, the dotcoin node must have public ip.
