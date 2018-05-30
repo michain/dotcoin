@@ -15,33 +15,25 @@ func NewMessageHandler(s *Server) *MessageHandler{
 
 // OnGetAddr is invoked when a peer receives a getaddr message
 func (handler *MessageHandler) OnGetAddr(msg *protocol.MsgGetAddr) {
-	logx.DevPrintf("ServerHandler OnGetAddr peer:%v remote:%v peers:%v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, handler.server.AddrManager.GetAddresses())
-	// Get the current known addresses from the address manager.
-	addrCache := handler.server.AddrManager.GetAddresses()
-	// Push the addresses.
-	handler.server.Peer.PushAddrMsg(addrCache)
+	logx.Tracef("ServerHandler OnGetAddr peer:%v remote:%v peers:%v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, handler.server.AddrManager.GetAddresses())
+	handler.server.SyncManager.HandleMessage(msg)
 }
 
 // OnAddr is invoked when a peer receives an addr message.
 func (handler *MessageHandler) OnAddr(msg *protocol.MsgAddr) {
- 	//logx.DevPrintf("ServerHandler OnAddr peer:%v remote:%v peers:%v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, handler.server.AddrManager.GetAddresses())
-	for _, addr:=range msg.AddrList{
-		handler.server.AddrManager.AddAddress(addr)
-	}
+ 	logx.Tracef("ServerHandler OnAddr peer:%v remote:%v peers:%v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, handler.server.AddrManager.GetAddresses())
+	handler.server.SyncManager.HandleMessage(msg)
 }
 
 // OnInv is invoked when a peer receives an inv message.
 func (handler *MessageHandler) OnInv(msg *protocol.MsgInv) {
-	logx.DevPrintf("ServerHandler OnInv peer:%v remote:%v invs:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, len(msg.InvList))
-	if len(msg.InvList) > 0 {
-		handler.server.SyncManager.HandleMessage(msg)
-	}
-	return
+	logx.Tracef("ServerHandler OnInv peer:%v remote:%v invs:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, len(msg.InvList))
+	handler.server.SyncManager.HandleMessage(msg)
 }
 
 // OnVersion is invoked when a peer receives an ver message
 func (handler *MessageHandler) OnVersion(msg *protocol.MsgVersion){
-	logx.DevPrintf("ServerHandler OnVersion peer:%v remote:%v version:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.ProtocolVersion)
+	logx.Tracef("ServerHandler OnVersion peer:%v remote:%v version:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.ProtocolVersion)
 	//add addrManager
 	handler.server.AddrManager.AddAddress(msg.GetFromAddr())
 	handler.server.SyncManager.HandleMessage(msg)
@@ -49,25 +41,24 @@ func (handler *MessageHandler) OnVersion(msg *protocol.MsgVersion){
 
 // OnGetBlocks is invoked when a peer receives an getblocks message
 func (handler *MessageHandler) OnGetBlocks(msg *protocol.MsgGetBlocks){
-	logx.DevPrintf("ServerHandler OnGetBlocks peer:%v remote:%v version:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.ProtocolVersion)
+	logx.Tracef("ServerHandler OnGetBlocks peer:%v remote:%v version:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.ProtocolVersion)
 	handler.server.SyncManager.HandleMessage(msg)
 }
 
 // OnGetData is invoked when a peer receives an getdata message
 func (handler *MessageHandler) OnGetData(msg *protocol.MsgGetData){
-	logx.DevPrintf("ServerHandler OnGetData peer:%v remote:%v version:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.ProtocolVersion)
+	logx.Tracef("ServerHandler OnGetData peer:%v remote:%v version:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.ProtocolVersion)
 	handler.server.SyncManager.HandleMessage(msg)
 }
 
 // OnBlock is invoked when a peer receives an block message
 func (handler *MessageHandler) OnBlock(msg *protocol.MsgBlock){
-	logx.DevPrintf("ServerHandler OnBlock peer:%v remote:%v version:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.ProtocolVersion)
+	logx.Tracef("ServerHandler OnBlock peer:%v remote:%v version:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.ProtocolVersion)
 	handler.server.SyncManager.HandleMessage(msg)
 }
 
-
 // OnTx is invoked when a peer receives an tx message
 func (handler *MessageHandler) OnTx(msg *protocol.MsgTx){
-	logx.DevPrintf("messageHandler OnTx peer:%v remote:%v version:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.ProtocolVersion)
+	logx.Tracef("messageHandler OnTx peer:%v remote:%v version:%+v", handler.server.Peer.GetListenAddr(), msg.AddrFrom, msg.ProtocolVersion)
 	handler.server.SyncManager.HandleMessage(msg)
 }

@@ -1,4 +1,4 @@
-package server
+package addr
 
 import (
 	"sync"
@@ -16,18 +16,24 @@ func NewAddrManager() *AddrManager{
 	}
 }
 
+// HasAddress check is exists address
+func (m *AddrManager) HasAddress(addr string) bool{
+	_, exists:=m.addrIndex[addr]
+	return exists
+}
+
 // AddAddress add addr into manager
 // if exists, convert it
-func (a *AddrManager) AddAddress(addr string){
-	a.mtx.Lock()
-	a.addrIndex[addr] = addr
-	a.mtx.Unlock()
+func (m *AddrManager) AddAddress(addr string){
+	m.mtx.Lock()
+	m.addrIndex[addr] = addr
+	m.mtx.Unlock()
 }
 
 // GetAddresses get all address in manager
-func (a *AddrManager) GetAddresses() []string{
+func (addr *AddrManager) GetAddresses() []string{
 	addrs := []string{}
-	for k, _:=range a.addrIndex{
+	for k, _:=range addr.addrIndex{
 		addrs = append(addrs, k)
 	}
 	return addrs

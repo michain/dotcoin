@@ -15,6 +15,7 @@ import (
 	"errors"
 	"github.com/michain/dotcoin/util/uuid"
 	"github.com/michain/dotcoin/mempool"
+	"github.com/michain/dotcoin/addr"
 )
 
 /*var curNodeID string
@@ -49,7 +50,7 @@ type Server struct{
 	TXMemPool *mempool.TxPool
 	Wallets *wallet.WalletSet
 	BlockChain *chain.Blockchain
-	AddrManager *AddrManager
+	AddrManager *addr.AddrManager
 	SyncManager *sync.SyncManager
 	Peer *peer.Peer
 	IsGenesisNode bool
@@ -175,7 +176,7 @@ func initServer(nodeID, minerAddr string, listenAddr, seedAddr string, isGenesis
 
 
 	//init addr manager
-	serv.AddrManager = NewAddrManager()
+	serv.AddrManager = addr.NewAddrManager()
 	serv.AddrManager.AddAddress(knowAddr)
 
 	//init peer
@@ -191,6 +192,7 @@ func initServer(nodeID, minerAddr string, listenAddr, seedAddr string, isGenesis
 		TxMemPool:serv.TXMemPool,
 		MaxPeers:MaxPeerNum,
 		Peer:serv.Peer,
+		AddrManager:serv.AddrManager,
 	})
 	if err!= nil{
 		return nil, err

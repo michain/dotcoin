@@ -5,8 +5,8 @@ import (
 	"github.com/michain/dotcoin/peer"
 	"github.com/michain/dotcoin/chain"
 	"github.com/michain/dotcoin/mempool"
-	"github.com/michain/dotcoin/logx"
 	"github.com/michain/dotcoin/util/hashx"
+	"github.com/michain/dotcoin/addr"
 )
 
 // Config is a configuration struct used to initialize a new SyncManager.
@@ -14,6 +14,7 @@ type Config struct {
 	Chain        *chain.Blockchain
 	TxMemPool    *mempool.TxPool
 	Peer		 *peer.Peer
+	AddrManager  *addr.AddrManager
 	MaxPeers     int
 }
 
@@ -21,6 +22,7 @@ type SyncManager struct{
 	chain          *chain.Blockchain
 	txMemPool      *mempool.TxPool
 	peer			*peer.Peer
+	addrManager     *addr.AddrManager
 	peerStates      map[string]*peerSyncState
 
 	requestedTxs   map[hashx.Hash]struct{}
@@ -36,6 +38,7 @@ func New(config *Config) (*SyncManager, error) {
 		chain:           	config.Chain,
 		txMemPool:       	config.TxMemPool,
 		peer:				config.Peer,
+		addrManager:		config.AddrManager,
 		peerStates: 	 	make(map[string]*peerSyncState),
 		requestedTxs:	 	make(map[hashx.Hash]struct{}),
 		requestedBlocks:	make(map[hashx.Hash]struct{}),
@@ -44,32 +47,9 @@ func New(config *Config) (*SyncManager, error) {
 	return &sm, nil
 }
 
+// StartSync start loop sync handle
 func (manager *SyncManager) StartSync(){
-	for {
-		select {
-		case m := <-manager.msgChan:
-			switch msg := m.(type) {
-			case *protocol.MsgVersion:
-				manager.handleMsgVersion(msg)
-			case *protocol.MsgInv:
-				manager.handleMsgInv(msg)
-			case *protocol.MsgGetBlocks:
-				manager.handleMsgGetBlocks(msg)
-			case *protocol.MsgGetData:
-				manager.handleMsgGetData(msg)
-			case *protocol.MsgBlock:
-				manager.handleMsgBlock(msg)
-			case *protocol.MsgTx:
-				manager.handleMsgTx(msg)
-			default:
-				logx.Warnf("Invalid message type in sync msg chan: %T", msg)
-			}
-
-		case <-manager.quitSign:
-			logx.Trace("SyncManager handle message done")
-			return
-		}
-	}
+	manager.loopHandle()
 }
 
 // haveInventory check inv is exists

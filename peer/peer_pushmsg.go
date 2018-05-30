@@ -6,31 +6,32 @@ import (
 	"github.com/michain/dotcoin/logx"
 )
 
-func (p *Peer) PushAddrMsg(addresses []string) error {
-	addressCount := len(addresses)
+func (p *Peer) PushAddrMsg(msg *protocol.MsgAddr) error {
+	addressCount := len(msg.AddrList)
+
 
 	// Nothing to send.
 	if addressCount == 0 {
 		return nil
 	}
 
-	msg := protocol.NewMsgAddr()
-	msg.AddrList = make([]string, addressCount)
-	copy(msg.AddrList, addresses)
+	addresses := make([]string, addressCount)
+	copy(addresses, msg.AddrList)
 
 	// Randomize the addresses sent if there are more than the maximum allowed.
 	if addressCount > protocol.MaxAddrPerMsg {
 		// Shuffle the address list.
 		for i := 0; i < protocol.MaxAddrPerMsg; i++ {
 			j := i + rand.Intn(addressCount-i)
-			msg.AddrList[i], msg.AddrList[j] = msg.AddrList[j], msg.AddrList[i]
+			addresses[i], addresses[j] = addresses[j], addresses[i]
 		}
 
 		// Truncate it to the maximum size.
-		msg.AddrList = msg.AddrList[:protocol.MaxAddrPerMsg]
+		addresses = addresses[:protocol.MaxAddrPerMsg]
 	}
+	msg.AddrList = addresses
 
-	p.SendSingleMessage(msg)
+
 	return nil
 }
 

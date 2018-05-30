@@ -11,6 +11,70 @@ func (manager *SyncManager) HandleMessage(msg protocol.Message){
 	manager.msgChan <- msg
 }
 
+func (manager *SyncManager) loopHandle(){
+	for {
+		select {
+		case m := <-manager.msgChan:
+			switch msg := m.(type) {
+			case *protocol.MsgVersion:
+				manager.handleMsgVersion(msg)
+			case *protocol.MsgGetAddr:
+				manager.handleMsgGetAddr(msg)
+			case *protocol.MsgAddr:
+				manager.handleMsgAddr(msg)
+			case *protocol.MsgInv:
+				manager.handleMsgInv(msg)
+			case *protocol.MsgGetBlocks:
+				manager.handleMsgGetBlocks(msg)
+			case *protocol.MsgGetData:
+				manager.handleMsgGetData(msg)
+			case *protocol.MsgBlock:
+				manager.handleMsgBlock(msg)
+			case *protocol.MsgTx:
+				manager.handleMsgTx(msg)
+			default:
+				logx.Warnf("Invalid message type in sync msg chan: %T", msg)
+			}
+
+		case <-manager.quitSign:
+			logx.Trace("SyncManager handle message done")
+			return
+		}
+	}
+}
+
+// handleMsgAddr handles Addr messages from other node.
+func (manager *SyncManager) handleMsgAddr(msg *protocol.MsgAddr){
+	needSync := []string{}
+	for _, addr:=range msg.AddrList{
+		if !manager.addrManager.HasAddress(addr){
+			manager.addrManager.AddAddress(addr)
+			needSync = append(needSync, addr)
+		}
+	}
+	logx.Infof("handleMsgAddr get Addresses %d from peer:%v", len(msg.AddrList), msg.GetFromAddr())
+
+	//notify other node
+	if len(needSync) < 0 {
+		msgSend := protocol.NewMsgAddr()
+		msgSend.SetFromAddr(msg.GetFromAddr())
+		msgSend.AddrList = needSync
+		msgSend.AddrFrom = msg.AddrFrom
+		manager.peer.SendRouteMessage(msgSend)
+	}
+}
+
+// handleMsgGetAddr handles GetAddr messages from other node.
+func (manager *SyncManager) handleMsgGetAddr(msg *protocol.MsgGetAddr){
+	// Get the current known addresses from the address manager.
+	addrCache := manager.addrManager.GetAddresses()
+
+	msgSend := protocol.NewMsgAddr()
+	msgSend.SetFromAddr(msg.GetFromAddr())
+	msgSend.AddrList = addrCache
+	manager.peer.PushAddrMsg(msgSend)
+	logx.Infof("handleMsgGetAddr Send Addresses %d from peer:%v", len(addrCache), msg.GetFromAddr())
+}
 
 // handleVerionMsg handles version messages from other node.
 // check best block height
@@ -48,6 +112,11 @@ func (manager *SyncManager) handleMsgVersion(msg *protocol.MsgVersion){
 // handle the inventory message and act GetData message
 func (manager *SyncManager) handleMsgInv(msg *protocol.MsgInv) {
 
+	if len(msg.InvList) <= 0 {
+		logx.Warnf("SyncManager:handleInvMsg received empty inv list")
+		return
+	}
+
 	state:= manager.getPeerState(msg.GetFromAddr())
 
 	// Attempt to find the final block in the inventory list
@@ -75,7 +144,7 @@ func (manager *SyncManager) handleMsgInv(msg *protocol.MsgInv) {
 
 		haveInv, err := manager.haveInventory(iv)
 		if err != nil {
-			logx.Errorf("[%v] Unexpected failure when checking for existing inventory [%s]", "handleInvMsg", err)
+			logx.Errorf("SyncManager:handleInvMsg [%v] Unexpected failure when checking for existing inventory [%s]", "handleInvMsg", err)
 			continue
 		}
 
@@ -230,7 +299,11 @@ func (manager *SyncManager) handleMsgTx(msg *protocol.MsgTx){
 
 	// Add block to block chain
 	err:=manager.txMemPool.ProcessTransaction(msg.Tx, true)
-	logx.Info("SyncManager.handleMsgTx ProcessTransaction ", err)
+	if err != nil{
+		logx.Errorf("SyncManager.handleMsgTx ProcessTransaction tx:%v error", msg.Tx.GetHash())
+	}else{
+		logx.Infof("SyncManager.handleMsgTx ProcessTransaction tx:%v success", msg.Tx.GetHash())
+	}
 
 	// Notify other node which related of current node
 	if err == nil{
