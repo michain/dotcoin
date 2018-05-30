@@ -14,6 +14,8 @@ import (
 	"strings"
 	"github.com/michain/dotcoin/util"
 	"github.com/michain/dotcoin/util/hashx"
+	"errors"
+	"github.com/michain/dotcoin/logx"
 )
 
 
@@ -158,8 +160,14 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 	return txCopy
 }
 
-// Hash returns the hash of the Transaction
-func (tx *Transaction) Hash() hashx.Hash {
+// GetHash return the hash of the transaction
+func (tx *Transaction) GetHash() (*hashx.Hash) {
+	return &tx.ID
+}
+
+
+// Hash calc and return the hash of the Transaction
+func (tx *Transaction) CalcHash() hashx.Hash {
 	var hash [32]byte
 
 	txCopy := *tx
@@ -172,7 +180,7 @@ func (tx *Transaction) Hash() hashx.Hash {
 
 
 func (tx *Transaction) StringHash() string{
-	return tx.Hash().String()
+	return tx.ID.String()
 }
 
 // SerializeTransaction serializes a transaction for []byte
@@ -207,13 +215,13 @@ func NewCoinbaseTX(to, data string, reward int) *Transaction {
 	fmt.Println(txout)
 	tx := Transaction{*hashx.ZeroHash(), []TXInput{*txin}, []TXOutput{*txout}}
 
-	tx.ID = tx.Hash()
+	tx.ID = tx.CalcHash()
 
 	return &tx
 }
 
 // NewUTXOTransaction creates a new transaction
-func NewUTXOTransaction(fromWallet *wallet.Wallet, to string, amount int, UTXOSet *UTXOSet, txPool TxPool) *Transaction {
+func NewUTXOTransaction(fromWallet *wallet.Wallet, to string, amount int, UTXOSet *UTXOSet, txPool TxPool) (*Transaction, error) {
 	var inputs []TXInput
 	var outputs []TXOutput
 
@@ -221,7 +229,7 @@ func NewUTXOTransaction(fromWallet *wallet.Wallet, to string, amount int, UTXOSe
 	acc, validOutputs := UTXOSet.FindSpendableOutputs(pubKeyHash, amount, txPool)
 
 	if acc < amount {
-		log.Panic("ERROR: Not enough funds")
+		return nil, errors.New("Not enough funds")
 	}
 
 	// Build a list of inputs
@@ -247,9 +255,17 @@ func NewUTXOTransaction(fromWallet *wallet.Wallet, to string, amount int, UTXOSe
 	}
 
 	tx := Transaction{*hashx.ZeroHash(), inputs, outputs}
-	tx.ID = tx.Hash()
+	tx.ID = tx.CalcHash()
 	UTXOSet.Blockchain.SignTransaction(&tx, fromWallet.PrivateKey)
 
-	return &tx
+	//add TX to mempool
+	_, err := txPool.MaybeAcceptTransaction(&tx)
+	if err != nil{
+		//TODO log err info
+		logx.Errorf("NewUTXOTransaction error %s send %s %d coins err: %v", from, to, amount, err)
+		return nil, errors.New("add to mempool error: " + err.Error())
+	}
+	logx.Infof("NewUTXOTransaction sucess %s send %s %d coins tx: %v", from, to, amount, tx.StringHash())
+	return &tx, nil
 }
 

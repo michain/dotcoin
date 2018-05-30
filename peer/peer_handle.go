@@ -25,4 +25,7 @@ type MessageHandle interface {
 
 	// OnBlock is invoked when a peer receives an block message
 	OnBlock(msg *protocol.MsgBlock)
+
+	// OnTx is invoked when a peer receives an tx message
+	OnTx(msg *protocol.MsgTx)
 }

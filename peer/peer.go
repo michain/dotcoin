@@ -8,8 +8,8 @@ import (
 // Peer extends the node to maintain state shared by the server
 type Peer struct {
 	node *Node
-	boardcastQueue chan interface{}
-	singleQueue chan *SingleRequest
+	boardcastQueue chan *RequestInfo
+	singleQueue chan *RequestInfo
 	receiveQueue chan *Request
 	messageHandler MessageHandle
 	continueHash   *hashx.Hash
@@ -18,8 +18,8 @@ type Peer struct {
 
 func NewPeer(listenAddr, seedAddr string, msgHandler MessageHandle) *Peer{
 	p := new(Peer)
-	p.singleQueue = make(chan *SingleRequest, 10)
-	p.boardcastQueue = make(chan interface{}, 10)
+	p.singleQueue = make(chan *RequestInfo, 10)
+	p.boardcastQueue = make(chan *RequestInfo, 10)
 	p.receiveQueue = make(chan *Request, 10)
 	p.messageHandler = msgHandler
 	p.node = NewNode(listenAddr, seedAddr, p.boardcastQueue, p.receiveQueue, p.singleQueue)
@@ -42,7 +42,7 @@ func (p *Peer) GetListenAddr() string{
 
 // BroadcastMessage send message to all downstream nodes and seed node
 func (p *Peer) SendSingleMessage(msg protocol.Message){
-	p.singleQueue <- &SingleRequest{
+	p.singleQueue <- &RequestInfo{
 		Data:msg,
 		FromAddr:msg.GetFromAddr(),
 	}
@@ -50,7 +50,19 @@ func (p *Peer) SendSingleMessage(msg protocol.Message){
 
 // BroadcastMessage send message to all downstream nodes and seed node
 func (p *Peer) BroadcastMessage(msg protocol.Message){
-	p.boardcastQueue <- msg
+	p.boardcastQueue <- &RequestInfo{
+		Data:msg,
+		FromAddr:"",
+	}
+}
+
+
+// RouteMessage send message to all downstream nodes and seed node without source node
+func (p *Peer) SendRouteMessage(msg protocol.Message){
+	p.boardcastQueue <- &RequestInfo{
+		Data:msg,
+		FromAddr:msg.GetFromAddr(),
+	}
 }
 
 

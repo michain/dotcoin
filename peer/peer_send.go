@@ -22,7 +22,7 @@ func localSingleSend(node *Node) {
 			now := time.Now().UnixNano()
 			r := Request{
 				ID:      now,
-				Command: SingleSendRequest,
+				Command: SendRequest,
 				Data:    raw.Data,
 				From:    node.listenAddr,
 			}
@@ -67,8 +67,8 @@ func localBoardcastSend(node *Node) {
 			now := time.Now().UnixNano()
 			r := Request{
 				ID:      now,
-				Command: BoardcastRequest,
-				Data:    raw,
+				Command: SendRequest,
+				Data:    raw.Data,
 				From:    node.listenAddr,
 			}
 
@@ -77,10 +77,9 @@ func localBoardcastSend(node *Node) {
 			sendDatas[r.ID] = r
 			lock.Unlock()
 			n := 0
-			if node.seedAddr != "" {
+			if raw.FromAddr != node.seedAddr && node.seedAddr != "" {
 				// send to the seed
 				err := WriteConnRequest(node.seedConn, r)
-				logx.DevDebugf("localBoardcastSend send to seed %v %v", node.seedAddr, err)
 				if err!=nil{
 					logx.Errorf("localBoardcastSend send to seed error %v %v", node.seedAddr, err)
 				}
@@ -94,17 +93,18 @@ func localBoardcastSend(node *Node) {
 
 			// send to the downstream
 			for addr, conn := range node.downstreamNodes {
-				err := WriteConnRequest(conn, r)
-				logx.DevDebugf("localBoardcastSend downstreamNodes WriteConnRequest %v %v", addr, err)
-				if err!=nil{
-					logx.Errorf("localBoardcastSend send to downstreamNode error %v %v", addr, err)
+				if raw.FromAddr != addr && addr != "" {
+					err := WriteConnRequest(conn, r)
+					if err != nil {
+						logx.Errorf("localBoardcastSend send to downstreamNode error %v %v", addr, err)
+					}
+					lock.Lock()
+					sendPackets[r.ID] = append(sendPackets[r.ID], &Packet{
+						Addr: addr,
+					})
+					lock.Unlock()
+					n++
 				}
-				lock.Lock()
-				sendPackets[r.ID] = append(sendPackets[r.ID], &Packet{
-					Addr: addr,
-				})
-				lock.Unlock()
-				n++
 			}
 
 			// nothing happend, do some sweeping work.
@@ -119,11 +119,11 @@ func localBoardcastSend(node *Node) {
 }
 
 // when receive remote node's messages, we will route to other nodes and the outer application
-func routeSend(node *Node, r *Request) {
+func localRouteSend(node *Node, r *Request) {
 	now := time.Now().UnixNano()
 	newReq := Request{
 		ID:      now,
-		Command: BoardcastRequest,
+		Command: SendRequest,
 		Data:    r.Data,
 		From:    node.listenAddr,
 	}

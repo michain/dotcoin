@@ -3,6 +3,7 @@ package peer
 import (
 	"github.com/michain/dotcoin/protocol"
 	"math/rand"
+	"github.com/michain/dotcoin/logx"
 )
 
 func (p *Peer) PushAddrMsg(addresses []string) error {
@@ -29,9 +30,6 @@ func (p *Peer) PushAddrMsg(addresses []string) error {
 		msg.AddrList = msg.AddrList[:protocol.MaxAddrPerMsg]
 	}
 
-	//set single send
-	msg.SetNeedBroadcast(false)
-
 	p.SendSingleMessage(msg)
 	return nil
 }
@@ -53,6 +51,12 @@ func (p *Peer) PushGetBlocks(msg *protocol.MsgGetBlocks) error{
 
 func (p *Peer) PushBlock(msg *protocol.MsgBlock) error{
 	//logx.DevPrintf("Peer.PushBlock peer:%v remote:%v msg:%v trans:%d", p.GetListenAddr(), msg.GetFromAddr(), msg.Block.GetHash(), len(msg.Block.Transactions))
+	p.SendSingleMessage(msg)
+	return nil
+}
+
+func (p *Peer) PushTx(msg *protocol.MsgTx) error{
+	logx.DevPrintf("Peer.PushTx peer:%v remote:%v msg:%v", p.GetListenAddr(), msg.GetFromAddr(), msg.Tx.GetHash())
 	p.SendSingleMessage(msg)
 	return nil
 }

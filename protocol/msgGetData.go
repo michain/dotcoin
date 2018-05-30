@@ -5,7 +5,7 @@ import "fmt"
 const defaultInvListAlloc = 1000
 
 type MsgGetData struct {
-	netMessage
+	NetMessage
 	InvList []*InvInfo
 }
 

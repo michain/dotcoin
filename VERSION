@@ -1,5 +1,16 @@
 # DotCoin
 
+
+## version 0.1.2
+* Add PushVersion when in StartServer
+* Add MsgTx and related Handler
+* Add process new transaction
+* Add Transaction CalcHash func
+* Modify GetHash\StringHash use ID
+* Perfect Sign and Data message process logic
+* fixed some bug
+* 2018-05-30 19:00
+
 ## version 0.1.1
 * Replace connx for gob.Encode(conn)
 * Add Blockchain process new block

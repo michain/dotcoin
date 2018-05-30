@@ -34,6 +34,9 @@ func (p *Peer) ReciveMessage() {
 		case protocol.MsgBlock:
 			msg.AddrFrom = req.From
 			p.messageHandler.OnBlock(&msg)
+		case protocol.MsgTx:
+			msg.AddrFrom = req.From
+			p.messageHandler.OnTx(&msg)
 		default:
 			logx.Errorf("Received unhandled message of type %v "+
 				"from %v [%v]", reflect.TypeOf(req.Data), p, msg)

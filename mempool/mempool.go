@@ -19,12 +19,6 @@ import (
 
 
 const (
-	// DefaultBlockPrioritySize is the default size in bytes for high-
-	// priority / low-fee transactions.  It is used to help determine which
-	// are allowed into the mempool and consequently affects their relay and
-	// inclusion when generating block templates.
-	DefaultBlockPrioritySize = 50000
-
 	// orphanTTL is the maximum amount of time an orphan is allowed to
 	// stay in the orphan pool before it expires and is evicted during the
 	// next scan.
@@ -51,7 +45,7 @@ type TxPool struct {
 	// The following variables must only be used atomically.
 	lastUpdated int64 // last time pool was updated
 
-	mtx           sync.RWMutex
+	mtx           *sync.RWMutex
 	pool          map[string]*chain.Transaction
 	orphans       map[string]*orphanTx
 
@@ -71,6 +65,7 @@ type TxPool struct {
 // transactions until they are mined into a block.
 func New(bc *chain.Blockchain) *TxPool {
 	return &TxPool{
+		mtx:			new(sync.RWMutex),
 		bc:				bc,
 		pool:           make(map[string]*chain.Transaction),
 		orphans:        make(map[string]*orphanTx),
@@ -129,7 +124,7 @@ func (mp *TxPool) addOrphan(tx *chain.Transaction) {
 		tx:         tx,
 		expiration: time.Now().Add(orphanTTL),
 	}
-	logx.Debugf("Stored orphan transaction %v (total: %d)", tx.Hash(),
+	logx.Debugf("Stored orphan transaction %v (total: %d)", tx.GetHash(),
 		len(mp.orphans))
 }
 
@@ -210,6 +205,13 @@ func (mp *TxPool) isTransactionInPool(hash string) bool {
 	return false
 }
 
+// GetTransaction get transaction info from txpool
+func (mp *TxPool) GetTransaction(hash string) (*chain.Transaction, bool){
+	tx,exists := mp.pool[hash]
+	return tx, exists
+}
+
+
 // IsTransactionInPool returns whether or not the passed transaction already
 // exists in the main pool.
 //
@@ -282,12 +284,10 @@ func (mp *TxPool) removeTransaction(tx *chain.Transaction, removeRedeemers bool)
 		delete(mp.pool, txHash)
 		atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
 	}
-	logx.Debugf("Remove transaction %v (exists: %v)", tx.Hash(), exists)
+	logx.Debugf("Remove transaction %v (exists: %v)", tx.GetHash(), exists)
 }
 
 // RemoveTransaction removes the passed transaction from the mempool.
-//
-// This function is safe for concurrent access.
 func (mp *TxPool) RemoveTransaction(tx *chain.Transaction, removeRedeemers bool) {
 	// Protect concurrent access.
 	mp.mtx.Lock()
@@ -296,11 +296,7 @@ func (mp *TxPool) RemoveTransaction(tx *chain.Transaction, removeRedeemers bool)
 }
 
 
-// addTransaction adds the passed transaction to the memory pool.  It should
-// not be called directly as it doesn't perform any validation.  This is a
-// helper for maybeAcceptTransaction.
-//
-// This function MUST be called with the mempool lock held (for writes).
+// addTransaction adds the passed transaction to the memory pool.
 func (mp *TxPool) addTransaction(tx *chain.Transaction, height int32, fee int64) error {
 
 	//FeePerKB: fee * 1000 / int64(tx.MsgTx().SerializeSize()),
@@ -317,11 +313,8 @@ func (mp *TxPool) addTransaction(tx *chain.Transaction, height int32, fee int64)
 
 
 // maybeAcceptTransaction is the internal function which implements the public
-// MaybeAcceptTransaction.  See the comment for MaybeAcceptTransaction for
-// more details.
-//
-// This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) maybeAcceptTransaction(tx *chain.Transaction, isNew, rateLimit, rejectDupOrphans bool) ([]*hashx.Hash, error) {
+// MaybeAcceptTransaction.
+func (mp *TxPool) maybeAcceptTransaction(tx *chain.Transaction, rejectDupOrphans bool) ([]*hashx.Hash, error) {
 	txHash := tx.StringHash()
 
 	// Don't accept the transaction if it already exists in the pool.  This
@@ -342,9 +335,6 @@ func (mp *TxPool) maybeAcceptTransaction(tx *chain.Transaction, isNew, rateLimit
 		return nil,  errors.New(str)
 	}
 
-	// Get the current height of the main chain.  A standalone transaction
-	// will be mined into the next block at best, so its height is at least
-	// one more than the current height.
 	bestHeight := mp.bc.GetBestHeight()
 
 	//check double spend in pool
@@ -371,28 +361,17 @@ func (mp *TxPool) maybeAcceptTransaction(tx *chain.Transaction, isNew, rateLimit
 }
 
 
-// MaybeAcceptTransaction is the main workhorse for handling insertion of new
-// free-standing transactions into a memory pool.
-
-// If the transaction is an orphan (missing parent transactions), the
-// transaction is NOT added to the orphan pool, but each unknown referenced
-// parent is returned.  Use ProcessTransaction instead if new orphans should
-// be added to the orphan pool.
-//
-// This function is safe for concurrent access.
-func (mp *TxPool) MaybeAcceptTransaction(tx *chain.Transaction, isNew, rateLimit bool) ([]*hashx.Hash, error) {
+// MaybeAcceptTransaction is for handling insertion of new transactions into a mempool.
+func (mp *TxPool) MaybeAcceptTransaction(tx *chain.Transaction) ([]*hashx.Hash, error) {
 	// Protect concurrent access.
 	mp.mtx.Lock()
-	hashes, err := mp.maybeAcceptTransaction(tx, isNew, rateLimit, true)
+	hashes, err := mp.maybeAcceptTransaction(tx, true)
 	mp.mtx.Unlock()
 
 	return hashes, err
 }
 
-// processOrphans is the internal function which implements the public
-// ProcessOrphans.  See the comment for ProcessOrphans for more details.
-//
-// This function MUST be called with the mempool lock held (for writes).
+// processOrphans is the internal function which implements the public ProcessOrphans
 func (mp *TxPool) processOrphans(acceptedTx *chain.Transaction) error {
 
 	// Start with processing at least the passed transaction.
@@ -403,7 +382,7 @@ func (mp *TxPool) processOrphans(acceptedTx *chain.Transaction) error {
 		firstElement := processList.Remove(processList.Front())
 		processItem := firstElement.(*chain.Transaction)
 
-		prevOut := chain.OutPoint{Hash: processItem.Hash()}
+		prevOut := chain.OutPoint{Hash: *processItem.GetHash()}
 		for txOutIdx  := range processItem.Outputs {
 			// Look up all orphans that redeem the output that is
 			// now available.  This will typically only be one, but
@@ -424,7 +403,7 @@ func (mp *TxPool) processOrphans(acceptedTx *chain.Transaction) error {
 
 			// Potentially accept an orphan into the tx pool.
 			for _, tx := range orphans {
-				missing, err := mp.maybeAcceptTransaction(tx, true, true, false)
+				missing, err := mp.maybeAcceptTransaction(tx, true)
 				if err != nil {
 					// The orphan is now invalid, so there
 					// is no way any other orphans which
@@ -454,26 +433,16 @@ func (mp *TxPool) processOrphans(acceptedTx *chain.Transaction) error {
 	return nil
 }
 
-// ProcessTransaction is the main workhorse for handling insertion of new
-// free-standing transactions into the memory pool.  It includes functionality
-// such as rejecting duplicate transactions, ensuring transactions follow all
-// rules, orphan transaction handling, and insertion into the memory pool.
-//
-// It returns a slice of transactions added to the mempool.  When the
-// error is nil, the list will include the passed transaction itself along
-// with any additional orphan transaactions that were added as a result of
-// the passed one being accepted.
-//
-// This function is safe for concurrent access.
-func (mp *TxPool) ProcessTransaction(tx *chain.Transaction, allowOrphan, rateLimit bool) error {
-	logx.Tracef("Processing transaction %v", tx.Hash())
+// ProcessTransaction is the main workhorse for handling insertion of new transactions into the mempool.
+func (mp *TxPool) ProcessTransaction(tx *chain.Transaction, allowOrphan bool) error {
+	logx.Tracef("Processing transaction %v", tx.GetHash())
 
 	// Protect concurrent access.
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
 
 	// Potentially accept the transaction to the memory pool.
-	missingParents, err := mp.maybeAcceptTransaction(tx, true, rateLimit, true)
+	missingParents, err := mp.maybeAcceptTransaction(tx, true)
 	if err != nil {
 		return err
 	}
@@ -500,7 +469,7 @@ func (mp *TxPool) ProcessTransaction(tx *chain.Transaction, allowOrphan, rateLim
 		// which is not really always the case.
 		str := fmt.Sprintf("orphan transaction %v references "+
 			"outputs of unknown or fully-spent "+
-			"transaction %v", tx.Hash(), missingParents[0])
+			"transaction %v", tx.GetHash(), missingParents[0])
 		return errors.New(str)
 	}
 
@@ -521,7 +490,7 @@ func (mp *TxPool) checkDoubleSpendInPool(tx *chain.Transaction) error {
 		if txR, exists := mp.outpoints[txIn.PreviousOutPoint]; exists {
 			str := fmt.Sprintf("output %v already spent by "+
 				"transaction %v in the memory pool",
-				txIn.PreviousOutPoint, txR.Hash())
+				txIn.PreviousOutPoint, txR.GetHash())
 			return errors.New("DoubleSpend " +str)
 		}
 	}

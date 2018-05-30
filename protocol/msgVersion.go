@@ -3,7 +3,7 @@ package protocol
 import "time"
 
 type MsgVersion struct {
-	netMessage
+	NetMessage
 	ProtocolVersion int32
 
 	// Time the message was generated.  This is encoded as an int64 on the wire.

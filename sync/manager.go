@@ -59,6 +59,8 @@ func (manager *SyncManager) StartSync(){
 				manager.handleMsgGetData(msg)
 			case *protocol.MsgBlock:
 				manager.handleMsgBlock(msg)
+			case *protocol.MsgTx:
+				manager.handleMsgTx(msg)
 			default:
 				logx.Warnf("Invalid message type in sync msg chan: %T", msg)
 			}
@@ -85,6 +87,9 @@ func (manager *SyncManager) haveInventory(inv *protocol.InvInfo) (bool, error) {
 		// end of the main chain.
 		entry, err := manager.chain.FindTransaction(&inv.Hash)
 		if err != nil {
+			if err == chain.ErrorNotFoundTransaction{
+				return false, nil
+			}
 			return false, err
 		}
 
@@ -94,4 +99,28 @@ func (manager *SyncManager) haveInventory(inv *protocol.InvInfo) (bool, error) {
 	return false, nil
 }
 
+// getPeerState get peerState with peer's Addr
+func (manager *SyncManager) getPeerState(peerAddr string) *peerSyncState{
+	state, exists := manager.peerStates[peerAddr]
+	if !exists{
+		 state= &peerSyncState{
+			setInventoryKnown: newInventorySet(maxInventorySize),
+			requestedTxns:     make(map[hashx.Hash]struct{}),
+			requestedBlocks:   make(map[hashx.Hash]struct{}),
+		}
+		manager.peerStates[peerAddr] = state
+	}
+	return state
+}
 
+// AddPeerState create new remote peer state
+// if already exists, not cover it
+func (manager *SyncManager) AddPeerState(remoteAddr string){
+	if _, exists:=manager.peerStates[remoteAddr];!exists {
+		manager.peerStates[remoteAddr] = &peerSyncState{
+			setInventoryKnown: newInventorySet(maxInventorySize),
+			requestedTxns:     make(map[hashx.Hash]struct{}),
+			requestedBlocks:   make(map[hashx.Hash]struct{}),
+		}
+	}
+}

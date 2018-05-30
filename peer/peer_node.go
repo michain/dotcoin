@@ -8,6 +8,7 @@ import (
 	"io"
 	"errors"
 	"github.com/michain/dotcoin/connx"
+	"encoding/gob"
 )
 
 var lock = &sync.Mutex{}
@@ -51,8 +52,8 @@ type(
 		downstreamNodes map[string]net.Conn
 
 		// outer application channels
-		boardcastSend chan interface{}
-		singleSend chan *SingleRequest
+		boardcastSend chan *RequestInfo
+		singleSend chan *RequestInfo
 		recv chan *Request
 	}
 
@@ -62,14 +63,18 @@ type(
 	retry int
 	}
 
-	SingleRequest struct{
+	RequestInfo struct{
 		Data interface{}
 		FromAddr string
 	}
 )
 
+func init(){
+	gob.Register(RequestInfo{})
+}
+
 // NewNode return new &node with laddr, saddr, send, recv
-func NewNode(laddr, saddr string, boardcast chan interface{}, recv chan *Request, single chan *SingleRequest) *Node{
+func NewNode(laddr, saddr string, boardcast chan *RequestInfo, recv chan *Request, single chan *RequestInfo) *Node{
 	return &Node{
 		listenAddr:  laddr,
 		sourceAddr:  saddr,

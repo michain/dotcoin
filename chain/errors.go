@@ -2,7 +2,7 @@ package chain
 
 import "github.com/pkg/errors"
 
-var ErrorNotFound = errors.New("not found the transaction")
+var ErrorNotFoundTransaction = errors.New("not found the transaction")
 
 var ErrBlockNoTransactions = errors.New("block does not contain any transactions")
 

@@ -3,7 +3,7 @@ package protocol
 import "github.com/michain/dotcoin/chain"
 
 type MsgBlock struct {
-	netMessage
+	NetMessage
 	Block *chain.Block
 }
 

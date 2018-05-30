@@ -351,7 +351,7 @@ func (bc *Blockchain) FindTransaction(ID *hashx.Hash) (*Transaction, error) {
 		}
 	}
 
-	return nil, ErrorNotFound
+	return nil, ErrorNotFoundTransaction
 }
 
 // VerifyTransaction verifies transaction input signatures

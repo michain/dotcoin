@@ -29,10 +29,13 @@ func (h *RpcHandler) SendTX(txPacket packet.TXPacket, result *packet.JsonResult)
 	if fromWallet  == nil{
 		return errors.New("not exists [from] address")
 	}
-	tx := chain.NewUTXOTransaction(fromWallet, txPacket.To, txPacket.Money, h.server.BlockChain.GetUTXOSet(), h.server.TXMemPool)
+	tx, err := chain.NewUTXOTransaction(fromWallet, txPacket.To, txPacket.Money, h.server.BlockChain.GetUTXOSet(), h.server.TXMemPool)
+	if err != nil{
+		return  err
+	}
 
 	//add TX to mempool
-	_, err := h.server.TXMemPool.MaybeAcceptTransaction(tx, true, true)
+	_, err = h.server.TXMemPool.MaybeAcceptTransaction(tx)
 	if err != nil{
 		return  err
 	}

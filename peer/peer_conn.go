@@ -16,8 +16,7 @@ type Request struct {
 }
 
 const (
-	BoardcastRequest         = 0 // outer application's data
-	SingleSendRequest 		 = 1
+	SendRequest 		 = 1
 	ServerPing            	 = 2 // ping to the seed
 	ServerPong            	 = 3 // pong to the ping
 	SyncBackupSeeds       	 = 4 // query for the backup seeds
@@ -30,17 +29,8 @@ func (r *Request) handleConn(node *Node, conn net.Conn) (string, error) {
 	case RequestReceived:
 		// delete the message from resend queue
 		deleteResend(r.ID, r.From)
-	case BoardcastRequest:
-		logx.DevDebugf("peer.BoardcastRequest [%v] => [%v] %v", r.From, node.listenAddr, *r)
-		// route the received message to other nodes and outer application
-		routeSend(node, r)
-		// send to the outer application
-		node.recv <- r
-
-		//send ack message
-		sendNormalRequestReceived(r, node, conn)
-	case SingleSendRequest:
-		logx.DevDebugf("peer.SingleSendRequest [%v] => [%v] %v", r.From, node.listenAddr, *r)
+	case SendRequest:
+		logx.Tracef("peer.handleConn.SendRequest [%v] => [%v] %v", r.From, node.listenAddr, *r)
 		// send to the outer application
 		node.recv <- r
 		//send ack message

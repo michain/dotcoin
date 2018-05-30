@@ -102,16 +102,21 @@ func Test_StartPeer(t *testing.T){
 	}()*/
 
 	go func(){
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 3)
 		msg := protocol.NewMsgVersion(Server_1.BlockChain.GetBestHeight())
 		Server_1.Peer.PushVersion(msg)
 
-
+		msg2 := protocol.NewMsgVersion(Server_2.BlockChain.GetBestHeight())
+		Server_2.Peer.PushVersion(msg2)
 
 		/*iv := protocol.NewInvInfo(protocol.InvTypeTx, chainhash.ZeroHash())
 		msgInv := protocol.NewMsgInv()
 		msgInv.AddInvInfo(iv)
 		p_2_1.BroadcastMessage(msgInv)*/
+
+
+		time.Sleep(time.Second * 3)
+		Test_NewTx(t)
 
 	}()
 
@@ -147,6 +152,32 @@ func Test_ShowInfo(t *testing.T){
 	}
 }
 
+func Test_NewTx(t *testing.T){
+	fmt.Println(genServer.Wallets.Wallets)
+	genServer.BlockChain.ListBlockHashs()
+
+	fromWallet := genServer.Wallets.GetWallet(fromAddress)
+	if fromWallet  == nil{
+		fmt.Println("not exists [from] address")
+		os.Exit(-1)
+	}
+
+	to := genServer.Wallets.CreateWallet().GetStringAddress()
+	tx, err := chain.NewUTXOTransaction(fromWallet, to, 1, genServer.BlockChain.GetUTXOSet(), genServer.TXMemPool)
+	if err == nil{
+		fmt.Println("NewUTXOTransaction outer", tx.ID, tx.Inputs[0].PreviousOutPoint.Hash)
+	}else{
+		fmt.Println("NewUTXOTransaction outer error", tx.ID, tx.Inputs[0].PreviousOutPoint.Hash, err)
+		t.Error(err)
+	}
+
+	inv := protocol.NewInvInfo(protocol.InvTypeTx, *tx.GetHash())
+	msgInv := protocol.NewMsgInv()
+	msgInv.AddrFrom = genServer.ListenAddress
+	msgInv.AddInvInfo(inv)
+	genServer.Peer.BroadcastMessage(msgInv)
+}
+
 func Test_runMining(t *testing.T){
 	//add tx
 
@@ -160,13 +191,14 @@ func Test_runMining(t *testing.T){
 	}
 
 	to := genServer.Wallets.CreateWallet().GetStringAddress()
-	tx := chain.NewUTXOTransaction(fromWallet, to, 1, genServer.BlockChain.GetUTXOSet(), genServer.TXMemPool)
-	fmt.Println("NewUTXOTransaction outer", tx.ID, tx.Inputs[0].PreviousOutPoint.Hash)
-	//add TX to mempool
-	_, err := genServer.TXMemPool.MaybeAcceptTransaction(tx, true, true)
-	if err != nil{
-		fmt.Println(err)
+	tx, err := chain.NewUTXOTransaction(fromWallet, to, 1, genServer.BlockChain.GetUTXOSet(), genServer.TXMemPool)
+	if err == nil{
+		fmt.Println("NewUTXOTransaction outer", tx.ID, tx.Inputs[0].PreviousOutPoint.Hash)
+	}else{
+		fmt.Println("NewUTXOTransaction outer error", tx.ID, tx.Inputs[0].PreviousOutPoint.Hash, err)
+		os.Exit(-1)
 	}
+
 
 	/*
 	logx.Debugf("Begin Range TxPool")

@@ -54,7 +54,7 @@ func (bc *Blockchain)ValidateBlock(block *Block, powLimit *big.Int) error {
 	// Check for duplicate transactions.
 	existingTxHashes := make(map[hashx.Hash]struct{})
 	for _, tx := range transactions {
-		hash := tx.Hash()
+		hash := *tx.GetHash()
 		if _, exists := existingTxHashes[hash]; exists {
 			return ErrBlockDuplicateTx
 		}

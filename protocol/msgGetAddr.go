@@ -2,7 +2,7 @@ package protocol
 
 
 type MsgGetAddr struct {
-	netMessage
+	NetMessage
 }
 
 // Command returns the protocol command string

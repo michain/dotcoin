@@ -7,7 +7,7 @@ import "github.com/michain/dotcoin/util/hashx"
 const MaxBlocksPerMsg = 500
 
 type MsgGetBlocks struct {
-	netMessage
+	NetMessage
 	HashStop        hashx.Hash
 }
 

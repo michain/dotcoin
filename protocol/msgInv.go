@@ -31,7 +31,7 @@ func NewInvInfo(typ string, hash hashx.Hash) *InvInfo {
 }
 
 type MsgInv struct {
-	netMessage
+	NetMessage
 	InvList []*InvInfo
 }
 

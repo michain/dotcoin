@@ -87,6 +87,10 @@ func (s *Server) listenPeer(){
 		log.Fatalf("listenPeer error: SeedAddress is nil")
 	}
 	logx.Debugf("listenPeer begin listen:%v seed:%v", s.ListenAddress, s.SeedAddress)
+	if !s.IsGenesisNode {
+		s.AddrManager.AddAddress(s.SeedAddress)
+		s.SyncManager.AddPeerState(s.SeedAddress)
+	}
 	s.Peer.StartListen()
 }
 
@@ -177,6 +181,10 @@ func initServer(nodeID, minerAddr string, listenAddr, seedAddr string, isGenesis
 	//init peer
 	serv.Peer = peer.NewPeer(serv.ListenAddress, serv.SeedAddress, NewMessageHandler(serv))
 
+
+	//init mempool
+	serv.TXMemPool = mempool.New(serv.BlockChain)
+
 	//init sync manager
 	serv.SyncManager, err = sync.New(&sync.Config{
 		Chain : serv.BlockChain,
@@ -189,8 +197,7 @@ func initServer(nodeID, minerAddr string, listenAddr, seedAddr string, isGenesis
 	}
 
 	//TODO:save to db?
-	//init mempool
-	serv.TXMemPool = mempool.New(serv.BlockChain)
+
 	return serv, nil
 }
 
