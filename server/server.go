@@ -228,9 +228,6 @@ func StartServer(nodeID, minerAddr string, listenAddr, seedAddr string, isGenesi
 		curServer.Peer.SendSingleMessage(msg)
 	}
 
-	//TODO:sync block data
-
-
 	//TODO:check config
 	serv.listenRPCServer()
 
