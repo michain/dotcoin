@@ -208,6 +208,12 @@ func (mp *TxPool) isTransactionInPool(hash string) bool {
 // GetTransaction get transaction info from txpool
 func (mp *TxPool) GetTransaction(hash string) (*chain.Transaction, bool){
 	tx,exists := mp.pool[hash]
+	if !exists{
+		orpTx,exists := mp.orphans[hash]
+		if exists{
+			return orpTx.tx, exists
+		}
+	}
 	return tx, exists
 }
 
@@ -259,8 +265,6 @@ func (mp *TxPool) haveTransaction(hash string) bool {
 
 // HaveTransaction returns whether or not the passed transaction already exists
 // in the main pool or in the orphan pool.
-//
-// This function is safe for concurrent access.
 func (mp *TxPool) HaveTransaction(hash string) bool {
 	// Protect concurrent access.
 	mp.mtx.RLock()
@@ -270,11 +274,7 @@ func (mp *TxPool) HaveTransaction(hash string) bool {
 	return haveTx
 }
 
-
-// removeTransaction is the internal function which implements the public
-// RemoveTransaction.  See the comment for RemoveTransaction for more details.
-//
-// This function MUST be called with the mempool lock held (for writes).
+// removeTransaction removes the passed transaction from the mempool.
 func (mp *TxPool) removeTransaction(tx *chain.Transaction, removeRedeemers bool) {
 	txHash := tx.StringHash()
 
