@@ -22,7 +22,7 @@ A simple and integrity blockchain implementation in Golang
 * downstream nodes
 * JsonRPC server
 * netsync
-* protocol
+* protocol (done: version, getaddr, addr, getblocks, inv, getdate, block, tx)
 * *TODO: Chain switch*
 * *TODO: Auto difficulty*
 * *TODO: Tools chain*
