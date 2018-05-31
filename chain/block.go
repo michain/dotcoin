@@ -22,7 +22,7 @@ type Block struct {
 	MerkleRoot	  []byte
 	Hash          []byte
 	Difficult	  int
-	Nonce         int
+	Nonce         int64
 	Height        int32
 	Transactions  []*Transaction
 }
@@ -77,7 +77,7 @@ func DeserializeBlock(d []byte) *Block {
 }
 
 // NewBlock creates and returns Block
-func NewBlock(transactions []*Transaction, prevBlockHash []byte, height int32) *Block {
+func NewBlock(transactions []*Transaction, prevBlockHash []byte, height int32, quit chan struct{}) (*Block, bool) {
 	block := &Block{}
 	block.Timestamp = time.Now().Unix()
 	block.Transactions = transactions
@@ -88,17 +88,20 @@ func NewBlock(transactions []*Transaction, prevBlockHash []byte, height int32) *
 	merkleRoot := block.HashTransactions()
 	block.MerkleRoot = merkleRoot
 
-	pow := proof.NewProofOfWork()
-	nonce, hash := pow.Run(prevBlockHash, merkleRoot)
-	block.Nonce = nonce
-	block.Hash = hash
-	return block
+	isSolve := false
+	if height > 0{
+		pow := proof.NewProofOfWork()
+		isSolve = pow.SolveHash(prevBlockHash, merkleRoot, quit)
+		block.Nonce = pow.Nonce
+		block.Hash = pow.Hash[:]
+	}
+	return block, isSolve
 }
 
 // NewGenesisBlock creates and returns genesis Block
 func NewGenesisBlock(address string) *Block {
 	coinbaseTX := NewCoinbaseTX(address, genesisCoinbaseData, genesisReward)
-	b:= NewBlock([]*Transaction{coinbaseTX}, []byte{}, 0)
+	b, _:= NewBlock([]*Transaction{coinbaseTX}, []byte{}, 0, nil)
 	fmt.Println(b.String())
 	return b
 }

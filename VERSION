@@ -1,6 +1,12 @@
 # DotCoin
 
 
+## version 0.1.3
+* Add Blockchain.TerminationMine() use to stop current mining
+* Add Send signal when accept new block message
+* Modify ProofOfWork.solveHash add quit chan
+* 2018-05-31 21:00
+
 ## version 0.1.2
 * Add PushVersion when in StartServer
 * Add MsgTx and related Handler

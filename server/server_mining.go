@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 	"github.com/michain/dotcoin/chain"
+	"github.com/michain/dotcoin/protocol"
+	"github.com/michain/dotcoin/logx"
 )
 
 func (s *Server) LoopMining(){
@@ -24,7 +26,6 @@ func (s *Server) LoopMining(){
 func runMining(s *Server) (*chain.Block, error){
 	var newBlock *chain.Block
 	if s.TXMemPool.Count() >= 1 && len(s.minerAddress) > 0 {
-	MineTransactions:
 		var txs []*chain.Transaction
 
 		//reward miningAddress in this node
@@ -44,29 +45,35 @@ func runMining(s *Server) (*chain.Block, error){
 
 
 		//rebuild utxo set
-		newBlock = s.BlockChain.MineBlock(txs)
+		isSuccess := false
+		newBlock, isSuccess = s.BlockChain.MineBlock(txs)
 
-		s.BlockChain.GetUTXOSet().Rebuild()
+		if !isSuccess{
+			fmt.Println("MineBlock failde")
+		}else {
 
-		fmt.Println("New block is mined!")
+			s.BlockChain.GetUTXOSet().Rebuild()
 
-		for _, tx := range txs {
-			if !tx.IsCoinBase() {
-				s.TXMemPool.RemoveTransaction(tx, false)
+			fmt.Println("New block is mined!")
+
+			for _, tx := range txs {
+				if !tx.IsCoinBase() {
+					s.TXMemPool.RemoveTransaction(tx, false)
+				}
 			}
-		}
 
-		for _, node := range s.AddrManager.GetAddresses() {
-			if node != s.ListenAddress {
-				//TODO: send inv?
-				hash := newBlock.Hash
-				fmt.Println("sendInv block", hash)
-				//sendInv(node, "block", [][]byte{newBlock.Hash})
-			}
-		}
+			// Broadcast inv message to other node
+			hash := newBlock.GetHash()
+			inv := protocol.NewInvInfo(protocol.InvTypeBlock, *hash)
+			msgSend := protocol.NewMsgInv()
+			msgSend.AddInvInfo(inv)
+			s.Peer.BroadcastMessage(msgSend)
+			logx.Infof("Server Mining Broadcast block [%v] inv message", hash.String())
 
-		if s.TXMemPool.Count() > 0 {
-			goto MineTransactions
+			//TODO: start next mining
+			/*if s.TXMemPool.Count() > 0 {
+				goto MineTransactions
+			}*/
 		}
 	}else{
 		fmt.Println("no tx to mine")

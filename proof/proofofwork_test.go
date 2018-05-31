@@ -6,6 +6,6 @@ import (
 )
 
 func TestNewProofOfWork(t *testing.T) {
-	pow := NewProofOfWork()
+	pow := NewProofOfWorkT(16)
 	fmt.Println(pow.target)
 }

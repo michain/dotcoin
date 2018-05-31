@@ -276,6 +276,11 @@ func (manager *SyncManager) handleMsgBlock(msg *protocol.MsgBlock){
 	isMain, isOrphanBlock, err:=manager.chain.ProcessBlock(msg.Block)
 	logx.Info("SyncManager.handleMsgBlock ProcessBlock ", isMain, isOrphanBlock, err)
 
+	// Notify signal to stop current mining
+	if err == nil{
+		manager.chain.TerminationMine()
+	}
+
 	// Notify other node which related of current node
 	if err == nil{
 		msgSend := protocol.NewMsgInv()

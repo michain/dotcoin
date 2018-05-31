@@ -13,13 +13,14 @@ import (
 	"github.com/michain/dotcoin/util/hashx"
 	"sync"
 	"encoding/hex"
+	"github.com/michain/dotcoin/logx"
 )
 
 const genesisCoinbaseData = "The Times 15/April/2018 for my 35th birthday!"
 
 const (
 	defaultNonce = 0
-	blockDefaultDifficult = 10
+	blockDefaultDifficult = 20
 	MaxBlockBaseSize = 1000000
 )
 
@@ -39,6 +40,9 @@ type Blockchain struct {
 
 	// previous hash index for faster lookups
 	prevOrphanBlocks map[hashx.Hash][]*Block
+
+	// when accept new block, it will stop current mining work
+	miningQuit chan struct{}
 }
 
 // CreateBlockchain creates a new blockchain with genesisBlock
@@ -84,6 +88,7 @@ func CreateBlockchain(isGenesisNode bool, address, nodeID string) *Blockchain {
 		orphanLock:new(sync.RWMutex),
 		orphanBlocks:make(map[hashx.Hash]*Block),
 		prevOrphanBlocks:make(map[hashx.Hash][]*Block),
+		miningQuit:make(chan struct{}),
 	}
 
 	fmt.Println("CreateBlockchain Success!")
@@ -126,6 +131,7 @@ func LoadBlockChain(nodeID string) (*Blockchain, error) {
 		orphanLock:new(sync.RWMutex),
 		orphanBlocks:make(map[hashx.Hash]*Block),
 		prevOrphanBlocks:make(map[hashx.Hash][]*Block),
+		miningQuit:make(chan struct{}),
 	}
 
 	return &bc, nil
@@ -135,8 +141,6 @@ func LoadBlockChain(nodeID string) (*Blockchain, error) {
 func (bc *Blockchain) GetStorageDB() *bolt.DB {
 	return bc.db
 }
-
-
 
 // addOrphanBlock add block into orphan blocks
 func (bc *Blockchain) addOrphanBlock(block *Block){
@@ -218,7 +222,7 @@ func (bc *Blockchain) GetBlock(blockHash []byte) (*Block, error) {
 }
 
 // MineBlock mines a new block with the provided transactions
-func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
+func (bc *Blockchain) MineBlock(transactions []*Transaction) (*Block, bool) {
 	var lastHash, lastBlockData []byte
 	var lastHeight int32
 	var err error
@@ -238,16 +242,25 @@ func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
 	lastHeight = lastBlock.Height
 
 	//run pow and create block
-	newBlock := NewBlock(transactions, lastHash, lastHeight+1)
-
-	//save block to db
-	err = storage.SaveBlock(bc.db, newBlock.Hash, SerializeBlock(newBlock))
-	if err != nil {
-		log.Panic(err)
+	newBlock, isSolve := NewBlock(transactions, lastHash, lastHeight+1, bc.miningQuit)
+	if !isSolve{
+		logx.Infof("MineBlock failed", lastHash, lastHeight)
+	}else{
+		//save block to db
+		err = storage.SaveBlock(bc.db, newBlock.Hash, SerializeBlock(newBlock))
+		if err != nil {
+			//log.Panic(err)
+			logx.Errorf("MineBlock error", lastHash, lastHeight, err)
+			return nil, false
+		}
+		bc.lastBlockHash = newBlock.Hash
 	}
-	bc.lastBlockHash = newBlock.Hash
+	return newBlock, isSolve
+}
 
-	return newBlock
+// TerminationMine send termination signal to stop current mining
+func (bc *Blockchain) TerminationMine(){
+	bc.miningQuit <- struct{}{}
 }
 
 // GetUTXOSet get current bc's UTXOSet wrapper
