@@ -1,5 +1,9 @@
 # DotCoin
 
+## version 0.1.4
+* Add CLI tools
+* Now support command: printchain|createwallet|getbalance|listaddresses|startnode
+* 2018-06-06 18:30
 
 ## version 0.1.3
 * Add Blockchain.TerminationMine() use to stop current mining
