@@ -48,6 +48,9 @@ func (cli *CLI) Run() {
 	getBalanceAddress := getBalanceCmd.String("address", "", "The address to get balance for")
 	startNodeMiner := startNodeCmd.String("miner", "", "Enable mining mode and send reward to ADDRESS")
 	startNodeIsGenesis := startNodeCmd.Bool("isgenesis", false, "Set is isGenesis Mode")
+	startNodeListen := startNodeCmd.String("listen", "", "Set listen addr")
+	startNodeSeed := startNodeCmd.String("seed", "", "Set seed addr")
+
 
 	nodeID:=os.Args[1]
 	command:=os.Args[2]
@@ -111,6 +114,6 @@ func (cli *CLI) Run() {
 	}
 
 	if startNodeCmd.Parsed() {
-		cli.startNode(nodeID, *startNodeMiner, *startNodeIsGenesis)
+		cli.startNode(nodeID, *startNodeMiner, *startNodeIsGenesis, *startNodeListen, *startNodeSeed)
 	}
 }

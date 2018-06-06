@@ -7,7 +7,7 @@ import (
 	"github.com/michain/dotcoin/server"
 )
 
-func (cli *CLI) startNode(nodeID, minerAddress string, isGenesis bool) {
+func (cli *CLI) startNode(nodeID, minerAddress string, isGenesis bool, listenAddr, seedAddr string) {
 	fmt.Printf("Starting node %s\n", nodeID)
 	nodeID = "3eb456d086f34118925793496cd20945"
 	if len(minerAddress) > 0 {
@@ -17,6 +17,10 @@ func (cli *CLI) startNode(nodeID, minerAddress string, isGenesis bool) {
 			log.Panic("Wrong miner address!")
 		}
 	}
-	server.StartServer(nodeID, minerAddress, tcpPort, tcpPort, isGenesis)
+	if listenAddr == ""{
+		listenAddr = tcpPort
+	}
+
+	server.StartServer(nodeID, minerAddress, listenAddr, seedAddr, isGenesis)
 }
 
