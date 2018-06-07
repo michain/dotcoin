@@ -4,11 +4,13 @@ A simple and integrity blockchain implementation in Golang
 ## Important!!! Now we are not yet completed all code.
 
 ## Keys
-* Base block struct
+* Core block struct
 * NewBlock 
-* Merkle 
+* Merkle Tree
 * GenesisBlock
-* Tranaction 
+* Transaction
+* Wallet
+* Boltdb
 * UTXO 
 * Balance
 * MemPool
@@ -21,7 +23,7 @@ A simple and integrity blockchain implementation in Golang
 * ping-pong
 * downstream nodes
 * JsonRPC server
-* netsync
+* net sync
 * protocol (done: version, getaddr, addr, getblocks, inv, getdate, block, tx)
 * CLI tools
 * *TODO: Chain switch*
