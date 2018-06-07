@@ -98,7 +98,7 @@ func (s *Server) listenPeer(){
 // initServer init server
 func initServer(nodeID, minerAddr string, listenAddr, seedAddr string, isGenesisNode bool) (*Server, error){
 	fmt.Println("------------------------------------------------------------------")
-	fmt.Println("[InitServer] Begin node server:", nodeID, minerAddr, isGenesisNode)
+	fmt.Println("[InitServer] Begin node server:", nodeID)
 	serv := new(Server)
 	serv.ListenAddress = listenAddr
 	serv.SeedAddress = seedAddr
@@ -161,8 +161,6 @@ func initServer(nodeID, minerAddr string, listenAddr, seedAddr string, isGenesis
 			return nil, errors.New(msg)
 		}
 	}
-
-	fmt.Println("[Important!!!] this node miner wallet address:", serv.minerAddress)
 
 	//load and check blockchain
 	if isFirstInit{
