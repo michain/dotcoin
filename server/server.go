@@ -71,7 +71,7 @@ func (s *Server) listenRPCServer() {
 		return
 	}
 
-	fmt.Println("begin listen ", lis.Addr())
+	logx.Debugf("RPCServer begin listen %s", lis.Addr())
 
 	for {
 		conn, err := lis.Accept()
@@ -85,9 +85,9 @@ func (s *Server) listenRPCServer() {
 
 func (s *Server) listenPeer(){
 	if !s.IsGenesisNode && s.SeedAddress == ""{
-		log.Fatalf("listenPeer error: SeedAddress is nil")
+		log.Fatalf("Peer begin listen error: SeedAddress is nil")
 	}
-	logx.Debugf("listenPeer begin listen:%v seed:%v", s.ListenAddress, s.SeedAddress)
+	logx.Debugf("Peer begin listen: %v seed: %v", s.ListenAddress, s.SeedAddress)
 	if !s.IsGenesisNode {
 		s.AddrManager.AddAddress(s.SeedAddress)
 		s.SyncManager.AddPeerState(s.SeedAddress)
