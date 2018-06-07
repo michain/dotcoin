@@ -162,7 +162,7 @@ func initServer(nodeID, minerAddr string, listenAddr, seedAddr string, isGenesis
 		}
 	}
 
-	fmt.Println("[Important!!!] this node miner wallet address:", serv.minerAddress, "IsFirstInit", isFirstInit)
+	fmt.Println("[Important!!!] this node miner wallet address:", serv.minerAddress)
 
 	//load and check blockchain
 	if isFirstInit{
