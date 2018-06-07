@@ -14,6 +14,7 @@ const(
 	cmdListAddresses = "listaddresses"
 	cmdPrintChain = "printchain"
 	cmdStartNode = "startnode"
+	cmdPrintLogo = "printlogo"
 )
 
 // CLI responsible for processing command line arguments
@@ -87,6 +88,8 @@ func (cli *CLI) Run() {
 		if err != nil {
 			log.Panic(err)
 		}
+	case cmdPrintLogo:
+		printLogo()
 	default:
 		cli.printUsage()
 		os.Exit(1)

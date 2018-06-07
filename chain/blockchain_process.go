@@ -17,7 +17,11 @@ func (bc *Blockchain) maybeAcceptBlock(block *Block) (bool, error){
 		logx.Infof("Blockchain maybeAcceptBlock  %v ValidateBlock error", block.GetHash(), err)
 		return false, err
 	}
-	bc.AddBlock(block)
+	err = bc.AddBlock(block)
+	if err != nil{
+		logx.Infof("Blockchain maybeAcceptBlock AddBlock %v error", block.GetHash(), err)
+		return false, err
+	}
 	return true, nil
 }
 

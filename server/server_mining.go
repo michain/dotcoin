@@ -58,7 +58,8 @@ func runMining(s *Server) (*chain.Block, error){
 
 			for _, tx := range txs {
 				if !tx.IsCoinBase() {
-					s.TXMemPool.RemoveTransaction(tx, false)
+					s.TXMemPool.RemoveTransaction(tx)
+					s.TXMemPool.RemoveOrphan(tx)
 				}
 			}
 

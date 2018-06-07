@@ -28,6 +28,7 @@ const (
 
 var ErrorBlockChainNotFount = errors.New("blockchain is not found")
 var ErrorNoExistsAnyBlock = errors.New("not exists any block")
+var ErrorAlreadyExistsBlock = errors.New("already exists such block")
 
 // Blockchain implements interactions with a DB
 type Blockchain struct {
@@ -155,18 +156,18 @@ func (bc *Blockchain) addOrphanBlock(block *Block){
 
 // AddBlock add the block into the blockchain
 // save to bolt, update LastBlockHash
-func (bc *Blockchain) AddBlock(block *Block) {
+func (bc *Blockchain) AddBlock(block *Block) error{
 	err := bc.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(storage.BoltBlocksBucket))
 		blockInDb := b.Get(block.Hash)
 		if blockInDb != nil {
-			return nil
+			return ErrorAlreadyExistsBlock
 		}
 
 		blockData := SerializeBlock(block)
 		err := b.Put(block.Hash, blockData)
 		if err != nil {
-			log.Panic(err)
+			return err
 		}
 
 		var bestHeight int32
@@ -183,16 +184,14 @@ func (bc *Blockchain) AddBlock(block *Block) {
 		if block.Height >= bestHeight {
 			err = b.Put([]byte(storage.BoltLastHashKey), block.Hash)
 			if err != nil {
-				log.Panic(err)
+				return err
 			}
 			bc.lastBlockHash = block.Hash
 		}
 
 		return nil
 	})
-	if err != nil {
-		log.Panic(err)
-	}
+	return err
 }
 
 // HaveBlock check block hash exists

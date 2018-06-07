@@ -1,5 +1,12 @@
 # DotCoin
 
+## Version 0.1.5
+* Update: if add block success, remove repetition txs in txmempool
+* Fixed: create merkletree out index bug
+* Add: print logo when start node
+* Add: new printlogo command
+* 2018-06-07 12:30
+
 ## version 0.1.4
 * Add CLI tools
 * Now support command: printchain|createwallet|getbalance|listaddresses|startnode

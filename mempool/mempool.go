@@ -275,7 +275,7 @@ func (mp *TxPool) HaveTransaction(hash string) bool {
 }
 
 // removeTransaction removes the passed transaction from the mempool.
-func (mp *TxPool) removeTransaction(tx *chain.Transaction, removeRedeemers bool) {
+func (mp *TxPool) removeTransaction(tx *chain.Transaction) {
 	txHash := tx.StringHash()
 
 	// Remove the transaction if needed.
@@ -288,10 +288,10 @@ func (mp *TxPool) removeTransaction(tx *chain.Transaction, removeRedeemers bool)
 }
 
 // RemoveTransaction removes the passed transaction from the mempool.
-func (mp *TxPool) RemoveTransaction(tx *chain.Transaction, removeRedeemers bool) {
+func (mp *TxPool) RemoveTransaction(tx *chain.Transaction) {
 	// Protect concurrent access.
 	mp.mtx.Lock()
-	mp.removeTransaction(tx, removeRedeemers)
+	mp.removeTransaction(tx)
 	mp.mtx.Unlock()
 }
 

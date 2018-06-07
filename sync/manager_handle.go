@@ -5,6 +5,7 @@ import (
 	"github.com/michain/dotcoin/logx"
 	"fmt"
 	"github.com/michain/dotcoin/util/hashx"
+	"github.com/michain/dotcoin/chain"
 )
 
 func (manager *SyncManager) HandleMessage(msg protocol.Message){
@@ -279,6 +280,16 @@ func (manager *SyncManager) handleMsgBlock(msg *protocol.MsgBlock){
 	// Notify signal to stop current mining
 	if err == nil{
 		manager.chain.TerminationMine()
+	}
+
+	// if add block success, remove repetition txs in txmempool
+	// must remove main tx and orphan tx
+	if err == nil || err == chain.ErrorAlreadyExistsBlock{
+		//remove same tx in txmempool
+		for _, tx:=range msg.Block.Transactions{
+			manager.txMemPool.RemoveTransaction(tx)
+			manager.txMemPool.RemoveOrphan(tx)
+		}
 	}
 
 	// Notify other node which related of current node
