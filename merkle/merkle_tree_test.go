@@ -61,23 +61,34 @@ func TestNewMerkleTree(t *testing.T) {
 		[]byte("trans1"),
 		[]byte("trans2"),
 		[]byte("trans3"),
+		[]byte("trans4"),
+		[]byte("trans5"),
 	}
 	// Level 1
 	n1 := NewMerkleNode(nil, nil, data[0])
 	n2 := NewMerkleNode(nil, nil, data[1])
 	n3 := NewMerkleNode(nil, nil, data[2])
-	n4 := NewMerkleNode(nil, nil, nil)
+	n4 := NewMerkleNode(nil, nil, data[3])
+	n5 := NewMerkleNode(nil, nil, data[4])
+	n6 := NewMerkleNode(nil, nil, nil)
+
 
 	// for loop i=0
 	// Level 2
-	n5 := NewMerkleNode(n1, n2, nil)
-	n6 := NewMerkleNode(n3, n4, nil)
+	n11 := NewMerkleNode(n1, n2, nil)
+	n12 := NewMerkleNode(n3, n4, nil)
+	n13 := NewMerkleNode(n5, n6, nil)
+	n14 := NewMerkleNode(nil, nil, nil)
 
 	// for loop i=1
 	// Level 3
-	n7 := NewMerkleNode(n5, n6, nil)
+	n21 := NewMerkleNode(n11, n12, nil)
+	n22 := NewMerkleNode(n13, n14, nil)
 
-	rootHash := fmt.Sprintf("%x", n7.Data)
+	n31 := NewMerkleNode(n21, n22, nil)
+
+
+	rootHash := fmt.Sprintf("%x", n31.Data)
 	mTree := NewMerkleTree(data)
 
 	if rootHash == fmt.Sprintf("%x", mTree.RootNode.Data){

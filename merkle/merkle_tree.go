@@ -1,6 +1,8 @@
 package merkle
 
-import "crypto/sha256"
+import (
+	"crypto/sha256"
+)
 
 // MerkleTree represent a Merkle tree
 type MerkleTree struct {
@@ -30,8 +32,10 @@ func NewMerkleTree(data [][]byte) *MerkleTree {
 	}
 
 	for i := 0; i < len(data)/2; i++ {
+		if len(nodes)%2 != 0 {
+			nodes = append(nodes, *NewMerkleNode(nil, nil, nil))
+		}
 		var newLevel []MerkleNode
-
 		for j := 0; j < len(nodes); j += 2 {
 			node := NewMerkleNode(&nodes[j], &nodes[j+1], nil)
 			newLevel = append(newLevel, *node)
