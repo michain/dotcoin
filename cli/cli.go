@@ -5,10 +5,12 @@ import (
 	"os"
 	"flag"
 	"log"
+	"github.com/michain/dotcoin/const"
 )
 
 const tcpPort = ":2398"
 const(
+	cmdVersion ="version"
 	cmdCreateWallet = "createwallet"
 	cmdGetBalance = "getbalance"
 	cmdListAddresses = "listaddresses"
@@ -40,6 +42,7 @@ func (cli *CLI) validateArgs() {
 func (cli *CLI) Run() {
 	cli.validateArgs()
 
+	versionCmd := flag.NewFlagSet(cmdVersion, flag.ExitOnError)
 	getBalanceCmd := flag.NewFlagSet(cmdGetBalance, flag.ExitOnError)
 	createWalletCmd := flag.NewFlagSet(cmdCreateWallet, flag.ExitOnError)
 	listAddressesCmd := flag.NewFlagSet(cmdListAddresses, flag.ExitOnError)
@@ -63,8 +66,10 @@ func (cli *CLI) Run() {
 
 	args := os.Args[3:]
 	switch command {
+	case cmdVersion:
+
 	case cmdGetBalance:
-		err := getBalanceCmd.Parse(args)
+		err := versionCmd.Parse(args)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -93,6 +98,10 @@ func (cli *CLI) Run() {
 	default:
 		cli.printUsage()
 		os.Exit(1)
+	}
+
+	if versionCmd.Parsed(){
+		fmt.Printf("Version is %s\n", _const.Version)
 	}
 
 	if getBalanceCmd.Parsed() {

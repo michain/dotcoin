@@ -1,9 +1,11 @@
 # DotCoin
 
 ## Version 0.1.6
-* Update: CLI startnode command run test
-* Add: ListMemPool Rpc Interface
-* Add: ListBlocks Rpc Interface
+* Update: CLI startnode command now can work.
+* Add: ListMemPool Rpc command
+* Add: ListBlocks Rpc command
+* Add: GetVersion Rpc command
+* Add: CLI Version command
 * Command:
 * if Genesis Node: ./dotcoin {NodeID} startnode -miner={Wallet Address} -isgenesis=true -listen="XX.XX.XX.XX:2398"
 * if Normal Node: ./dotcoin {NodeID} startnode -miner={Wallet Address} -listen="XX.XX.XX.XX:2398" -seed="XX.XX.XX.XX:2398"

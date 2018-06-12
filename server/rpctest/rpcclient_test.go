@@ -18,6 +18,10 @@ func TestCallListBlocks(t *testing.T) {
 	CallListBlocks()
 }
 
+func TestCallGetVersion(t *testing.T) {
+	CallGetVersion()
+}
+
 func TestCallSendTX(t *testing.T) {
 	from:="1HCGY3WD5UCFNxQyLodoPvSwhZDUQu3kCn"
 	to:="1BozgKkxFjtW5RnozCLzmnKc1zsfYdd95q"

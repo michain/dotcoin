@@ -26,6 +26,18 @@ func CallListAddress(){
 	fmt.Println(addresses, err)
 }
 
+
+func CallGetVersion(){
+
+	client := connRpcServer()
+	var reply packet.JsonResult
+	err := client.Call("Rpc.GetVersion", "test", &reply)
+	fmt.Println("GetVersion:", reply.Message)
+	addresses :=  reply.Message
+	fmt.Println(addresses, err)
+}
+
+
 func CallListBlocks(){
 
 	client := connRpcServer()

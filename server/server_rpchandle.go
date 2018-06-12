@@ -7,6 +7,7 @@ import (
 	"github.com/michain/dotcoin/server/packet"
 	"github.com/michain/dotcoin/wallet"
 	"github.com/michain/dotcoin/protocol"
+	"github.com/michain/dotcoin/const"
 )
 
 var (
@@ -52,13 +53,11 @@ func (h *RpcHandler) CreateWallet(name string, result *packet.JsonResult) error 
 	newWallet := h.server.Wallets.CreateWallet()
 
 	*result = packet.JsonResult{RetCode:0, RetMsg:"ok", Message:newWallet.GetStringAddress()}
-	fmt.Println(result)
 	return nil
 }
 
 func (h *RpcHandler) ListAddress(tag string, result *packet.JsonResult) error {
 	*result = packet.JsonResult{RetCode:0, RetMsg:"ok", Message:packet.WalletListPacket{h.server.Wallets.GetAddresses()}}
-	fmt.Println(result)
 	return nil
 }
 
@@ -71,6 +70,13 @@ func (h *RpcHandler) ListMemPool(name string, result *packet.JsonResult) error {
 	return nil
 }
 
+
+// ListMemPool list tx in mempool
+func (h *RpcHandler) GetVersion(name string, result *packet.JsonResult) error {
+	*result = packet.JsonResult{RetCode:0, RetMsg:"ok", Message:_const.Version}
+	return nil
+}
+
 // ListBlocks list blocks
 func (h *RpcHandler) ListBlocks(name string, result *packet.JsonResult) error {
 	h.server.BlockChain.ListBlockHashs()
@@ -80,6 +86,5 @@ func (h *RpcHandler) ListBlocks(name string, result *packet.JsonResult) error {
 	}
 
 	*result = packet.JsonResult{RetCode:0, RetMsg:"ok", Message:last}
-	fmt.Println(result)
 	return nil
 }
