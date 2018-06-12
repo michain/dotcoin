@@ -80,6 +80,9 @@ func (u UTXOSet) FindUTXO(pubKeyHash []byte) []TXOutput {
 
 	err := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(storage.BoltUTXOBucket))
+		if b == nil{
+			return nil
+		}
 		c := b.Cursor()
 
 		for k, v := c.First(); k != nil; k, v = c.Next() {

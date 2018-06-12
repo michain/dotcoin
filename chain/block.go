@@ -13,6 +13,7 @@ import (
 )
 
 const genesisReward = 100
+const genesisBlockHeight = 1
 
 
 // Block represents a block in the blockchain
@@ -89,7 +90,7 @@ func NewBlock(transactions []*Transaction, prevBlockHash []byte, height int32, q
 	block.MerkleRoot = merkleRoot
 
 	isSolve := false
-	if height > 0{
+	if height > genesisBlockHeight{
 		pow := proof.NewProofOfWork()
 		isSolve = pow.SolveHash(prevBlockHash, merkleRoot, quit)
 		block.Nonce = pow.Nonce
@@ -101,7 +102,7 @@ func NewBlock(transactions []*Transaction, prevBlockHash []byte, height int32, q
 // NewGenesisBlock creates and returns genesis Block
 func NewGenesisBlock(address string) *Block {
 	coinbaseTX := NewCoinbaseTX(address, genesisCoinbaseData, genesisReward)
-	b, _:= NewBlock([]*Transaction{coinbaseTX}, []byte{}, 0, nil)
+	b, _:= NewBlock([]*Transaction{coinbaseTX}, []byte{}, genesisBlockHeight, nil)
 	fmt.Println(b.String())
 	return b
 }

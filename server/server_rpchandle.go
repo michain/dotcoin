@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/michain/dotcoin/server/packet"
 	"github.com/michain/dotcoin/wallet"
+	"github.com/michain/dotcoin/protocol"
 )
 
 var (
@@ -34,20 +35,13 @@ func (h *RpcHandler) SendTX(txPacket packet.TXPacket, result *packet.JsonResult)
 		return  err
 	}
 
-	//add TX to mempool
-	_, err = h.server.TXMemPool.MaybeAcceptTransaction(tx)
-	if err != nil{
-		return  err
-	}
 
-	//if nodeAddress == knownNodes[0] {
-	//	for _, node := range knownNodes {
-	//		if node != nodeAddress && node != txPacket.AddFrom {
-				//TODO:send inventory to other server
-				//sendInv(node, "tx", [][]byte{tx.ID})
-	//		}
-	//	}
-	//}
+	//send inv message
+	inv := protocol.NewInvInfo(protocol.InvTypeTx, *tx.GetHash())
+	msgInv := protocol.NewMsgInv()
+	msgInv.AddrFrom = h.server.ListenAddress
+	msgInv.AddInvInfo(inv)
+	h.server.Peer.BroadcastMessage(msgInv)
 
 	*result = packet.JsonResult{0, "ok", tx.StringID()}
 	return nil
@@ -64,6 +58,28 @@ func (h *RpcHandler) CreateWallet(name string, result *packet.JsonResult) error 
 
 func (h *RpcHandler) ListAddress(tag string, result *packet.JsonResult) error {
 	*result = packet.JsonResult{RetCode:0, RetMsg:"ok", Message:packet.WalletListPacket{h.server.Wallets.GetAddresses()}}
+	fmt.Println(result)
+	return nil
+}
+
+// ListMemPool list tx in mempool
+func (h *RpcHandler) ListMemPool(name string, result *packet.JsonResult) error {
+	txs := h.server.TXMemPool.TxDescs()
+
+	*result = packet.JsonResult{RetCode:0, RetMsg:"ok", Message:txs}
+	fmt.Println(result)
+	return nil
+}
+
+// ListBlocks list blocks
+func (h *RpcHandler) ListBlocks(name string, result *packet.JsonResult) error {
+	h.server.BlockChain.ListBlockHashs()
+	last, err := h.server.BlockChain.GetLastBlock()
+	if err != nil{
+		return err
+	}
+
+	*result = packet.JsonResult{RetCode:0, RetMsg:"ok", Message:last}
 	fmt.Println(result)
 	return nil
 }

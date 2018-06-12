@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"time"
 	"github.com/michain/dotcoin/chain"
 	"github.com/michain/dotcoin/protocol"
@@ -9,16 +8,9 @@ import (
 )
 
 func (s *Server) LoopMining(){
-	return
 	for{
-		fmt.Println("mining begin...")
-		b, err := runMining(s)
-		if err != nil{
-			//TODO log err info
-		}
-		fmt.Println("mining end", "["+string(b.Hash) + ", "+string(b.PrevBlockHash)+"]")
-		fmt.Println("wait for next mining...")
-		time.Sleep(180 * time.Second)
+		runMining(s)
+		time.Sleep(10 * time.Second)
 	}
 }
 
@@ -49,12 +41,12 @@ func runMining(s *Server) (*chain.Block, error){
 		newBlock, isSuccess = s.BlockChain.MineBlock(txs)
 
 		if !isSuccess{
-			fmt.Println("MineBlock failde")
+			logx.Warnf("MineBlock failde")
 		}else {
 
 			s.BlockChain.GetUTXOSet().Rebuild()
 
-			fmt.Println("New block is mined!")
+			logx.Info("MineBlock Success", "hash:", string(newBlock.Hash), "prevhash:", string(newBlock.PrevBlockHash), "txs:", len(newBlock.Transactions))
 
 			for _, tx := range txs {
 				if !tx.IsCoinBase() {
@@ -69,15 +61,10 @@ func runMining(s *Server) (*chain.Block, error){
 			msgSend := protocol.NewMsgInv()
 			msgSend.AddInvInfo(inv)
 			s.Peer.BroadcastMessage(msgSend)
-			logx.Infof("Server Mining Broadcast block [%v] inv message", hash.String())
-
-			//TODO: start next mining
-			/*if s.TXMemPool.Count() > 0 {
-				goto MineTransactions
-			}*/
-		}
+			logx.Debugf("Server Mining Broadcast block [%v] inv message", hash.String())
+					}
 	}else{
-		fmt.Println("no tx to mine")
+		logx.Tracef("MineBlock failde: no tx to mine")
 	}
 
 	return newBlock, nil

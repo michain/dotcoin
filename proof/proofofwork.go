@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"bytes"
 	"github.com/michain/dotcoin/util"
+	"github.com/michain/dotcoin/logx"
 )
 
 var (
@@ -65,6 +66,7 @@ func (pow *ProofOfWork) solveHash(prevBlockHash, TXsHash []byte, quit chan struc
 	for nonce < maxNonce {
 		select {
 		case <-quit:
+			logx.Trace("Mining SolveHash Failed, because receive quit signal")
 			return false
 		default:
 			hash = pow.calculateHash(prevBlockHash, TXsHash, nonce)
@@ -77,12 +79,14 @@ func (pow *ProofOfWork) solveHash(prevBlockHash, TXsHash []byte, quit chan struc
 			if hashInt.Cmp(pow.target) == -1 {
 				pow.Nonce = int64(nonce)
 				pow.Hash = hash
+				logx.Trace("Mining SolveHash Success", nonce, hash)
 				return true
 			} else {
 				nonce++
 			}
 		}
 	}
+	logx.Trace("Mining SolveHash Failed, nonce now is same to maxNonce", nonce, maxNonce)
 	return false
 }
 
@@ -99,9 +103,7 @@ func (pow *ProofOfWork) RunAtOnce(prevBlockHash, TXsHash []byte) (int, []byte){
 
 // SolveHash loop calc hash to solve target
 func (pow *ProofOfWork) SolveHash(prevBlockHash, TXsHash []byte, quit chan struct{}) bool {
-	fmt.Println("Mining a new block begin")
 	isSolve := pow.solveHash(prevBlockHash, TXsHash, quit)
-	fmt.Println("Mining a new block end, IsSolve:", isSolve)
 	return isSolve
 }
 

@@ -126,8 +126,12 @@ func (bc *Blockchain) ProcessBlock(block *Block)(bool, bool, error){
 	//TODO checkBlockSanity
 
 	//check prevHash, if not exists, add to orphanBlocks
-	if block.Height != 0 {
+	if block.Height != genesisBlockHeight {
 		prevHash := block.GetPrevHash()
+		if prevHash == nil{
+			logx.Errorf("Block Processing check have block for prevhash error: prevhash is nil %v", prevHash)
+			return false, false, err
+		}
 		prevHashExists, err := bc.HaveBlock(prevHash)
 		if err != nil {
 			logx.Errorf("Block Processing check have block for prevhash error %v %v", err, prevHash)

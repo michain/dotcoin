@@ -82,7 +82,6 @@ func (manager *SyncManager) handleMsgGetAddr(msg *protocol.MsgGetAddr){
 func (manager *SyncManager) handleMsgVersion(msg *protocol.MsgVersion){
 	//TODO Add remote Timestamp -> AddTimeData
 	manager.AddPeerState(msg.GetFromAddr())
-
 	if manager.chain.GetBestHeight() < msg.LastBlockHeight  {
 		hashStop := hashx.ZeroHash()
 		if  manager.chain.GetBestHeight() > 0 {
@@ -112,7 +111,7 @@ func (manager *SyncManager) handleMsgVersion(msg *protocol.MsgVersion){
 // handleInvMsg handles inv messages from other node.
 // handle the inventory message and act GetData message
 func (manager *SyncManager) handleMsgInv(msg *protocol.MsgInv) {
-
+	logx.Debugf("SyncManager:handleInvMsg received message", *msg)
 	if len(msg.InvList) <= 0 {
 		logx.Warnf("SyncManager:handleInvMsg received empty inv list")
 		return

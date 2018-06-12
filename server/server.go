@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/rpc/jsonrpc"
 	"github.com/michain/dotcoin/peer"
-	"github.com/michain/dotcoin/protocol"
 	"github.com/michain/dotcoin/wallet"
 	"github.com/michain/dotcoin/chain"
 	"log"
@@ -16,6 +15,8 @@ import (
 	"github.com/michain/dotcoin/util/uuid"
 	"github.com/michain/dotcoin/mempool"
 	"github.com/michain/dotcoin/addr"
+	"time"
+	"github.com/michain/dotcoin/protocol"
 )
 
 /*var curNodeID string
@@ -217,17 +218,28 @@ func StartServer(nodeID, minerAddr string, listenAddr, seedAddr string, isGenesi
 	go serv.SyncManager.StartSync()
 
 	//TODO:check config
-	go serv.LoopMining()
+	go func(){
+		time.Sleep(time.Minute)
+		serv.LoopMining()
+	}()
+
+	fmt.Println("isGenesisNode", isGenesisNode)
 
 	if !isGenesisNode {
-		//send this node version info
-		msg := protocol.NewMsgVersion(curServer.BlockChain.GetBestHeight())
-		msg.AddrFrom = serv.Peer.GetSeedAddr()
-		curServer.Peer.SendSingleMessage(msg)
+		go func() {
+			time.Sleep(3 * time.Second)
+
+			//send this node version info
+			msg := protocol.NewMsgVersion(curServer.BlockChain.GetBestHeight())
+			msg.AddrFrom = serv.Peer.GetSeedAddr()
+			curServer.Peer.SendSingleMessage(msg)
+		}()
 	}
 
 	//TODO:check config
 	serv.listenRPCServer()
+
+
 
 	return nil
 

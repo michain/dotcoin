@@ -11,7 +11,7 @@ func (cli *CLI) startNode(nodeID, minerAddress string, isGenesis bool, listenAdd
 	printLogo()
 
 	fmt.Printf("Starting node %s\n", nodeID)
-	nodeID = "3eb456d086f34118925793496cd20945"
+	//nodeID = "3eb456d086f34118925793496cd20945"
 	if len(minerAddress) > 0 {
 		if wallet.ValidateAddress(minerAddress) {
 			fmt.Println("Mining is on. Address to receive rewards: ", minerAddress)

@@ -26,6 +26,24 @@ func CallListAddress(){
 	fmt.Println(addresses, err)
 }
 
+func CallListBlocks(){
+
+	client := connRpcServer()
+	var reply packet.JsonResult
+	err := client.Call("Rpc.ListBlocks", "test", &reply)
+	fmt.Println(reply.Message)
+	addresses :=  reply.Message
+	fmt.Println(addresses, err)
+}
+
+func CallListMemPool(){
+	client := connRpcServer()
+	var reply packet.JsonResult
+	err := client.Call("Rpc.ListMemPool", "", &reply)
+	fmt.Println(reply.Message)
+	addresses :=  reply.Message
+	fmt.Println(addresses, err)
+}
 
 func CallSendTX(from, to string) error{
 	client := connRpcServer()
@@ -38,7 +56,8 @@ func CallSendTX(from, to string) error{
 
 
 func connRpcServer() *rpc.Client{
-	service := "127.0.0.1:2398"
+	//service := "192.168.42.91:12398"
+	service := ":12398"
 	client, err := jsonrpc.Dial("tcp", service)
 	if err != nil {
 		fmt.Println("dial error:", err)
