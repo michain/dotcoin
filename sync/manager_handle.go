@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/michain/dotcoin/util/hashx"
 	"github.com/michain/dotcoin/chain"
+	"bytes"
 )
 
 func (manager *SyncManager) HandleMessage(msg protocol.Message){
@@ -82,29 +83,47 @@ func (manager *SyncManager) handleMsgGetAddr(msg *protocol.MsgGetAddr){
 func (manager *SyncManager) handleMsgVersion(msg *protocol.MsgVersion){
 	//TODO Add remote Timestamp -> AddTimeData
 	manager.AddPeerState(msg.GetFromAddr())
-	if manager.chain.GetBestHeight() < msg.LastBlockHeight  {
+
+	//send getblocks message
+	localLastBlock, err := manager.chain.GetLastBlock()
+	if err != nil {
+		if err != chain.ErrorNoExistsAnyBlock{
+			logx.Error("handleMsgVersion::GetLastBlock error", err)
+			return
+		}else{
+			localLastBlock = &chain.Block{}
+		}
+	}
+
+	if localLastBlock.Height < msg.LastBlockHeight  {
 		hashStop := hashx.ZeroHash()
 		if  manager.chain.GetBestHeight() > 0 {
-			//send getblocks message
-			block, err := manager.chain.GetLastBlock()
-			if err != nil {
-				//TODO log get last block err
-				logx.Error("handleMsgVersion::GetLastBlock error", err)
-				return
-			}
-			hashStop = block.GetHash()
+			hashStop = localLastBlock.GetHash()
 		}
 		msgSend := protocol.NewMsgGetBlocks(*hashStop)
 		msgSend.AddrFrom = msg.GetFromAddr()
 		manager.peer.PushGetBlocks(msgSend)
-	} else if manager.chain.GetBestHeight() > msg.LastBlockHeight   {
+
+	} else if localLastBlock.Height > msg.LastBlockHeight   {
 		//send version message
-		msgSend := protocol.NewMsgVersion(manager.chain.GetBestHeight())
+		msgSend := protocol.NewMsgVersion(localLastBlock.Height, localLastBlock.Hash, localLastBlock.PrevBlockHash)
 		msgSend.AddrFrom = msg.GetFromAddr()
 		manager.peer.PushVersion(msgSend)
 	}else{
-		//TODO nothing to do?
-		logx.Debug("handleMsgVersion: it's same height, so nothing to do")
+		//check prevHash
+		if bytes.Compare(msg.LastBlockHash, localLastBlock.Hash) != 0{
+			if bytes.Compare(msg.LastBlockPrevHash, localLastBlock.PrevBlockHash) == 0{
+				//get block if not equal hash but equal height
+				msgSend := protocol.NewMsgGetBlocks(*localLastBlock.GetPrevHash())
+				msgSend.AddrFrom = msg.GetFromAddr()
+				manager.peer.PushGetBlocks(msgSend)
+			}else{
+				//TODO how to deal not equal last hash and last prev hash
+				logx.Debug("handleMsgVersion: how to deal not equal last hash and last prev hash?")
+			}
+		}else{
+			logx.Debug("handleMsgVersion: No block need sync because there is same height", msg.LastBlockHeight, " and same hash", localLastBlock.Hash)
+		}
 	}
 }
 

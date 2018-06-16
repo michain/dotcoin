@@ -103,10 +103,26 @@ func Test_StartPeer(t *testing.T){
 
 	go func(){
 		time.Sleep(time.Second * 3)
-		msg := protocol.NewMsgVersion(Server_1.BlockChain.GetBestHeight())
+		lastBlock, err := Server_1.BlockChain.GetLastBlock()
+		if err != nil{
+			if err != chain.ErrorNoExistsAnyBlock{
+				t.Error("Server_1 GetLastBlock error,", err)
+			}else{
+				lastBlock = &chain.Block{}
+			}
+		}
+		msg := protocol.NewMsgVersion(lastBlock.Height, lastBlock.Hash, lastBlock.PrevBlockHash)
 		Server_1.Peer.PushVersion(msg)
 
-		msg2 := protocol.NewMsgVersion(Server_2.BlockChain.GetBestHeight())
+		lastBlock, err = Server_2.BlockChain.GetLastBlock()
+		if err != nil{
+			if err != chain.ErrorNoExistsAnyBlock{
+				t.Error("Server_2 GetLastBlock error,", err)
+			}else{
+				lastBlock = &chain.Block{}
+			}
+		}
+		msg2 := protocol.NewMsgVersion(lastBlock.Height, lastBlock.Hash, lastBlock.PrevBlockHash)
 		Server_2.Peer.PushVersion(msg2)
 
 		/*iv := protocol.NewInvInfo(protocol.InvTypeTx, chainhash.ZeroHash())

@@ -24,6 +24,19 @@ func GetDBFileName(nodeID string) string{
 	return fmt.Sprintf(BoltFileFormat, nodeID)
 }
 
+// RemoveBlock remove block
+func RemoveBlock(db *bolt.DB, blockHash []byte) error{
+	err := db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(BoltBlocksBucket))
+		err := b.Delete(blockHash)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	return err
+}
+
 // CreateBlockBucket
 func CreateBlockBucket(db *bolt.DB) error{
 	err := db.Update(func(tx *bolt.Tx) error {

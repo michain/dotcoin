@@ -11,13 +11,21 @@ type MsgVersion struct {
 
 	// Last block Height seen by the generator of the version message.
 	LastBlockHeight int32
+
+	// Last block hash seen by the generator of the version message.
+	LastBlockHash []byte
+
+	// Last block prev hash seen by the generator of the version message.
+	LastBlockPrevHash []byte
 }
 
-func NewMsgVersion(lastBlockHeight int32) *MsgVersion{
+func NewMsgVersion(lastBlockHeight int32, lastBlockHash, lastBlockPrevHash []byte) *MsgVersion{
 	return &MsgVersion{
 		ProtocolVersion: int32(ProtocolVersion),
 		Timestamp:       time.Unix(time.Now().Unix(), 0),
-		LastBlockHeight:       lastBlockHeight,
+		LastBlockHeight: lastBlockHeight,
+		LastBlockHash:	 lastBlockHash,
+		LastBlockPrevHash:lastBlockPrevHash,
 	}
 }
 

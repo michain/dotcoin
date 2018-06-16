@@ -157,40 +157,37 @@ func (bc *Blockchain) addOrphanBlock(block *Block){
 // AddBlock add the block into the blockchain
 // save to bolt, update LastBlockHash
 func (bc *Blockchain) AddBlock(block *Block) error{
-	err := bc.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(storage.BoltBlocksBucket))
-		blockInDb := b.Get(block.Hash)
-		if blockInDb != nil {
-			return ErrorAlreadyExistsBlock
+	//check block is exists
+	alreadyHave, err:=bc.HaveBlock(block.GetHash())
+	if err != nil{
+		return err
+	}
+	if alreadyHave{
+		return ErrorAlreadyExistsBlock
+	}
+
+	//check block height
+	lastBlock, err := bc.GetLastBlock()
+	if err != nil{
+		return err
+	}
+
+	if block.Height == lastBlock.Height{
+		//check prevHash
+		if !block.GetPrevHash().IsEqual(lastBlock.GetPrevHash()){
+			//TODO must do Chain switch
 		}
-
-		blockData := SerializeBlock(block)
-		err := b.Put(block.Hash, blockData)
-		if err != nil {
-			return err
-		}
-
-		var bestHeight int32
-		lastHash := b.Get([]byte(storage.BoltLastHashKey))
-		lastBlockData := b.Get(lastHash)
-		if lastBlockData == nil{
-			bestHeight = 0
-		}else{
-			lastBlock := DeserializeBlock(lastBlockData)
-			bestHeight = lastBlock.Height
-		}
-
-
-		if block.Height >= bestHeight {
-			err = b.Put([]byte(storage.BoltLastHashKey), block.Hash)
-			if err != nil {
+		//compare difficulty
+		//if bigge, remove local last block
+		if block.Difficult > lastBlock.Difficult{
+			err:=storage.RemoveBlock(bc.db, lastBlock.Hash)
+			if err != nil{
 				return err
 			}
-			bc.lastBlockHash = block.Hash
 		}
-
-		return nil
-	})
+	}
+	//save block and update last block hash
+	err = storage.SaveBlock(bc.db, block.Hash, SerializeBlock(block))
 	return err
 }
 
@@ -209,6 +206,7 @@ func (bc *Blockchain) HaveBlock(blockHash *hashx.Hash) (bool, error){
 }
 
 // GetBlock finds a block by its hash and returns it
+// if not exists, return ErrorBlockNotFount
 func (bc *Blockchain) GetBlock(blockHash []byte) (*Block, error) {
 	var block *Block
 	blockData, err := storage.GetBlock(bc.db, blockHash)
@@ -376,7 +374,8 @@ func (bc *Blockchain) VerifyTransaction(tx *Transaction) bool {
 	for _, vin := range tx.Inputs {
 		prevTX, err := bc.FindTransaction(&vin.PreviousOutPoint.Hash)
 		if err != nil {
-			log.Panic(err, vin.PreviousOutPoint.Hash.String())
+			logx.Error(err, vin.PreviousOutPoint.Hash.String())
+			return false
 		}
 		prevTXs[prevTX.StringID()] = *prevTX
 	}

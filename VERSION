@@ -1,5 +1,11 @@
 # DotCoin
 
+## Version 0.1.7
+* Add: MsgVersion add LastBlockHash & LastBlockPrevHash field
+* Add: check LastBlockHash & LastBlockPrevHash when new version message receive
+* Add: check difficulty if the same height when add new block
+* 2018-06-16 23:45
+
 ## Version 0.1.6
 * Update: CLI startnode command now can work.
 * Add: ListMemPool Rpc command

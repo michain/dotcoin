@@ -218,25 +218,32 @@ func StartServer(nodeID, minerAddr string, listenAddr, seedAddr string, isGenesi
 	go serv.SyncManager.StartSync()
 
 	//TODO:check config
-	go func(){
-		time.Sleep(time.Minute)
-		serv.LoopMining()
-	}()
 
-	fmt.Println("isGenesisNode", isGenesisNode)
+	lastBlock, err := curServer.BlockChain.GetLastBlock()
+	if err != nil{
+		if err != chain.ErrorNoExistsAnyBlock{
+			logx.Error("GetLastBlock error,", err)
+			return err
+		}else{
+			lastBlock = &chain.Block{}
+		}
+	}
 
 	if !isGenesisNode {
 		go func() {
 			time.Sleep(3 * time.Second)
-
 			//send this node version info
-			msg := protocol.NewMsgVersion(curServer.BlockChain.GetBestHeight())
+			msg := protocol.NewMsgVersion(lastBlock.Height, lastBlock.Hash, lastBlock.PrevBlockHash)
 			msg.AddrFrom = serv.Peer.GetSeedAddr()
 			curServer.Peer.SendSingleMessage(msg)
 		}()
 	}
 
-	//TODO:check config
+	go func(){
+		time.Sleep(time.Minute)
+		serv.LoopMining()
+	}()
+
 	serv.listenRPCServer()
 
 
