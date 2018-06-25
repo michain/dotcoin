@@ -36,6 +36,8 @@ type Blockchain struct {
 	db  *bolt.DB
 	chainLock *sync.RWMutex
 
+	chainIndex *ChainIndex
+
 	orphanLock   *sync.RWMutex
 	orphanBlocks map[hashx.Hash]*Block
 
@@ -69,8 +71,9 @@ func CreateBlockchain(isGenesisNode bool, address, nodeID string) *Blockchain {
 	}
 
 	var lastBlockHash []byte
+	var genesis *Block
 	if isGenesisNode {
-		genesis := NewGenesisBlock(address)
+		genesis = NewGenesisBlock(address)
 
 		err =storage.SaveBlock(db, genesis.Hash, SerializeBlock(genesis))
 		if err != nil {
@@ -90,7 +93,12 @@ func CreateBlockchain(isGenesisNode bool, address, nodeID string) *Blockchain {
 		orphanBlocks:make(map[hashx.Hash]*Block),
 		prevOrphanBlocks:make(map[hashx.Hash][]*Block),
 		miningQuit:make(chan struct{}),
+		chainIndex:newChainIndex(db, nil),
 	}
+
+	//create block index bucket
+	bc.createChainIndex(genesis)
+
 
 	fmt.Println("CreateBlockchain Success!")
 	fmt.Println(fmt.Sprintf("lastBlockHash %x", bc.lastBlockHash))
@@ -115,6 +123,7 @@ func LoadBlockChain(nodeID string) (*Blockchain, error) {
 	var err error
 
 	var lastBlockHash []byte
+
 	db, err = bolt.Open(dbFile, 0600, nil)
 	if err != nil {
 		return nil, err
@@ -133,9 +142,50 @@ func LoadBlockChain(nodeID string) (*Blockchain, error) {
 		orphanBlocks:make(map[hashx.Hash]*Block),
 		prevOrphanBlocks:make(map[hashx.Hash][]*Block),
 		miningQuit:make(chan struct{}),
+		chainIndex:newChainIndex(db, nil),
 	}
 
+	//init chain block indexes
+	bc.initChainIndex()
+
 	return &bc, nil
+}
+
+// createChainIndex create block index bucket
+// if genesis is not nil then storage genesis block index
+func (bc *Blockchain) createChainIndex(genesis *Block) error{
+	//create block index bucket
+	err := storage.CreateBlockIndexBucket(bc.db)
+	if err != nil {
+		log.Panic("CreateBlockIndexBucket error", err)
+	}
+
+	if genesis != nil{
+		genesisIndex := newBlockIndex(genesis, nil)
+		bc.chainIndex.setTip(genesisIndex)
+		bc.chainIndex.AddIndex(genesisIndex)
+		// auto flush to db when genesis block
+		err := bc.chainIndex.flushToDB()
+		return err
+	}
+	return nil
+}
+
+// initChainIndex init chain index from db storage
+func (bc *Blockchain) initChainIndex() error {
+	var err error
+	err = bc.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(storage.BoltBlockIndexBucket))
+		cursor := b.Cursor()
+		for k,v := cursor.First(); k!=nil && v!=nil; k,v = cursor.Next() {
+			index :=DeserializeBlockIndex(v)
+			bc.chainIndex.setTip(index)
+			bc.chainIndex.addIndex(index)
+		}
+		return nil
+	})
+
+	return err
 }
 
 // GetStorageDB get storage db
@@ -193,6 +243,12 @@ func (bc *Blockchain) AddBlock(block *Block) error{
 
 // HaveBlock check block hash exists
 func (bc *Blockchain) HaveBlock(blockHash *hashx.Hash) (bool, error){
+	// search in indexes
+	if bc.chainIndex.HaveBlock(blockHash) {
+		return true, nil
+	}
+
+	// search in db
 	b, err:=bc.GetBlock(blockHash.CloneBytes())
 
 	if err != nil{

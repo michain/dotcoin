@@ -13,6 +13,7 @@ const(
 	BoltBlocksBucket = "blocks"
 	BoltUTXOBucket = "chainstate"
 	BoltTXMemPool = "txmempool"
+	BoltBlockIndexBucket = "blockindex"
 )
 
 var ErrorBlockNotFount = errors.New("Block is not found")
@@ -33,6 +34,13 @@ func RemoveBlock(db *bolt.DB, blockHash []byte) error{
 			return err
 		}
 		return nil
+	}
+	return err
+}
+func CreateBlockIndexBucket(db *bolt.DB) error{
+	err := db.Update(func(tx *bolt.Tx) error {
+		_, errc := tx.CreateBucket([]byte(BoltBlockIndexBucket))
+		return errc
 	})
 	return err
 }
@@ -43,6 +51,17 @@ func CreateBlockBucket(db *bolt.DB) error{
 		_, errc := tx.CreateBucket([]byte(BoltBlocksBucket))
 		return errc
 	})
+	return err
+}
+
+// SaveBlockIndex save block index to db
+func SaveBlockIndex(db *bolt.DB, key, blockIndex []byte) error{
+	err := db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(BoltBlockIndexBucket))
+		err := b.Put(key, blockIndex)
+		return err
+	})
+	//TODO:log db operate
 	return err
 }
 

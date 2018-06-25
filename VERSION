@@ -1,5 +1,12 @@
 # DotCoin
 
+## Version 0.1.8
+* New Feature: add ChainIndex to storage block index in db and runtime
+* New Feature: add blockIndex
+* Update: modify block's Difficult use uint32
+* Update: Blockchain.HaveBlock now will first search in ChainIndex, if not exists, search in db
+* 2018-06-25 13:00
+
 ## Version 0.1.7
 * Add: MsgVersion add LastBlockHash & LastBlockPrevHash field
 * Add: check LastBlockHash & LastBlockPrevHash when new version message receive

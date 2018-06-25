@@ -18,11 +18,11 @@ const genesisBlockHeight = 1
 
 // Block represents a block in the blockchain
 type Block struct {
-	Timestamp     int64
+	Timestamp     time.Time
 	PrevBlockHash []byte
 	MerkleRoot	  []byte
 	Hash          []byte
-	Difficult	  int
+	Difficult	  uint32
 	Nonce         int64
 	Height        int32
 	Transactions  []*Transaction
@@ -80,7 +80,7 @@ func DeserializeBlock(d []byte) *Block {
 // NewBlock creates and returns Block
 func NewBlock(transactions []*Transaction, prevBlockHash []byte, height int32, quit chan struct{}) (*Block, bool) {
 	block := &Block{}
-	block.Timestamp = time.Now().Unix()
+	block.Timestamp = time.Now()
 	block.Transactions = transactions
 	block.PrevBlockHash = prevBlockHash
 	block.Difficult = getCorrectDifficult()
@@ -134,6 +134,6 @@ func (b *Block) GetPrevHash() (*hashx.Hash) {
 
 
 
-func getCorrectDifficult() int{
+func getCorrectDifficult() uint32{
 	return blockDefaultDifficult
 }

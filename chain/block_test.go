@@ -83,8 +83,8 @@ func TestGetBalance(t *testing.T){
 }
 
 func TestNewUTXOTransaction(t *testing.T) {
-	trans := NewUTXOTransaction(god, from.GetStringAddress(), 10, godBlockChain.GetUTXOSet(), make(map[string]*Transaction))
-	fmt.Println(*trans)
+	trans, err := NewUTXOTransaction(god, from.GetStringAddress(), 10, godBlockChain.GetUTXOSet(), new(TxPool))
+	fmt.Println(*trans, err)
 }
 
 func TestFindTransaction(t *testing.T){

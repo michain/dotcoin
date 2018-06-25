@@ -17,11 +17,31 @@ func (bc *Blockchain) maybeAcceptBlock(block *Block) (bool, error){
 		logx.Infof("Blockchain maybeAcceptBlock  %v ValidateBlock error", block.GetHash(), err)
 		return false, err
 	}
+
+	prevHash := block.GetPrevHash()
+	prevNode := bc.chainIndex.LookupNode(prevHash)
+	if prevNode == nil {
+		str := fmt.Sprintf("Blockchain maybeAcceptBlock previous block %s is unknown", prevHash)
+		logx.Info(str)
+		return false, errors.New(str)
+	}
+
 	err = bc.AddBlock(block)
 	if err != nil{
 		logx.Infof("Blockchain maybeAcceptBlock AddBlock %v error", block.GetHash(), err)
 		return false, err
 	}
+
+	//add block index
+	newIndex := newBlockIndex(block, prevNode)
+	bc.chainIndex.SetTip(newIndex)
+	bc.chainIndex.AddIndex(newIndex)
+	err = bc.chainIndex.flushToDB()
+	if err != nil {
+		logx.Infof("Blockchain maybeAcceptBlock block index %v flushToDB error", block.GetHash(), err)
+		return false, err
+	}
+
 	return true, nil
 }
 
