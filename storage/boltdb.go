@@ -34,7 +34,7 @@ func RemoveBlock(db *bolt.DB, blockHash []byte) error{
 			return err
 		}
 		return nil
-	}
+	})
 	return err
 }
 func CreateBlockIndexBucket(db *bolt.DB) error{
