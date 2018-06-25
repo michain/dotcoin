@@ -6,6 +6,8 @@ var ErrorNotFoundTransaction = errors.New("not found the transaction")
 
 var ErrBlockNoTransactions = errors.New("block does not contain any transactions")
 
+var ErrBlockSizeTooBig = errors.New("block serialized is too big")
+
 var ErrBlockTooManyTransactions = errors.New("block has too many transactions")
 
 var ErrFirstTxNotCoinbase = errors.New("first transaction in block is not a coinbase")
