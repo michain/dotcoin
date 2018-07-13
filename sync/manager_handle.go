@@ -7,6 +7,7 @@ import (
 	"github.com/michain/dotcoin/util/hashx"
 	"github.com/michain/dotcoin/chain"
 	"bytes"
+	"encoding/hex"
 )
 
 func (manager *SyncManager) HandleMessage(msg protocol.Message){
@@ -81,6 +82,8 @@ func (manager *SyncManager) handleMsgGetAddr(msg *protocol.MsgGetAddr){
 // handleVerionMsg handles version messages from other node.
 // check best block height
 func (manager *SyncManager) handleMsgVersion(msg *protocol.MsgVersion){
+	logx.Debugf("SyncManager:handleMsgVersion received message from:%v version:%v height:%v lashHash:%v", msg.AddrFrom, msg.ProtocolVersion, msg.LastBlockHeight, hex.EncodeToString(msg.LastBlockHash))
+
 	//TODO Add remote Timestamp -> AddTimeData
 	manager.AddPeerState(msg.GetFromAddr())
 
@@ -241,6 +244,7 @@ func (manager *SyncManager) handleMsgGetBlocks(msg *protocol.MsgGetBlocks){
 	for _, hash:=range hashes{
 		msgInv.AddInvInfo(protocol.NewInvInfo(protocol.InvTypeBlock, *hash))
 	}
+	fmt.Println("SyncManager.handleMsgGetBlocks befor sendsingle message", msg.AddrFrom, msgInv.AddrFrom, len(msgInv.InvList))
 	manager.peer.SendSingleMessage(msgInv)
 }
 

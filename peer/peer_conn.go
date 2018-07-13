@@ -5,14 +5,19 @@ import (
 	"net"
 	"strconv"
 	"github.com/michain/dotcoin/logx"
+	"encoding/gob"
 )
 
 // Request 节点之间交换的数据结构
 type Request struct {
 	ID      int64
 	Command int
-	Data    interface{}
 	From    string
+	Data    interface{}
+}
+
+func init(){
+	gob.Register(Request{})
 }
 
 const (
@@ -51,54 +56,58 @@ func (r *Request) handleConn(node *Node, conn net.Conn) (string, error) {
 			}
 		}
 
-		WriteConnRequest(conn, &Request{
+		WriteConnRequest(conn, Request{
 			Command: BackupSeeds,
 			Data:    addrs,
 		})
 	case BackupSeeds:
-		addrs := r.Data.([]string)
+		if r.Data == nil{
 
-		for _, addr1 := range addrs {
-			if addr1 == "" {
-				continue
-			}
-			// the strategy of seeds update
-			// if the upper limit of the seedBackup is not reached, we can append the new addr to the seedBackup
-			// otherwise, we need to replace those nodes whose connection retries bigger than the maxRetry,
-			// with the new seed
-			exist := false
-			maxRetry := 0
-			for _, seed := range node.seedBackup {
-				if seed.retry > maxRetry {
-					maxRetry = seed.retry
-				}
-				if addr1 == seed.addr {
-					exist = true
-					break
-				}
-			}
+		}else {
+			addrs := r.Data.([]string)
 
-			if !exist {
-				if len(node.seedBackup) >= maxBackupSeedLen {
-					if maxRetry <= maxSeedFailedRetry {
+			for _, addr1 := range addrs {
+				if addr1 == "" {
+					continue
+				}
+				// the strategy of seeds update
+				// if the upper limit of the seedBackup is not reached, we can append the new addr to the seedBackup
+				// otherwise, we need to replace those nodes whose connection retries bigger than the maxRetry,
+				// with the new seed
+				exist := false
+				maxRetry := 0
+				for _, seed := range node.seedBackup {
+					if seed.retry > maxRetry {
+						maxRetry = seed.retry
+					}
+					if addr1 == seed.addr {
+						exist = true
 						break
 					}
-					for i, seed := range node.seedBackup {
-						if seed.retry > maxSeedFailedRetry {
-							node.seedBackup[i] = &Seed{
-								addr:  addr1,
-								retry: 0,
+				}
+
+				if !exist {
+					if len(node.seedBackup) >= maxBackupSeedLen {
+						if maxRetry <= maxSeedFailedRetry {
+							break
+						}
+						for i, seed := range node.seedBackup {
+							if seed.retry > maxSeedFailedRetry {
+								node.seedBackup[i] = &Seed{
+									addr:  addr1,
+									retry: 0,
+								}
 							}
 						}
+					} else {
+						node.seedBackup = append(node.seedBackup, &Seed{
+							addr:  addr1,
+							retry: 0,
+						})
 					}
-				} else {
-					node.seedBackup = append(node.seedBackup, &Seed{
-						addr:  addr1,
-						retry: 0,
-					})
 				}
-			}
 
+			}
 		}
 
 		logx.Debugf("peer.BackupSeeds source: %s,current：%s,backup：%v,downsteam：%v", node.sourceAddr, node.seedAddr, getSeedAddrs(node.seedBackup), node.downstreamNodes)

@@ -42,10 +42,11 @@ func (p *Peer) GetListenAddr() string{
 
 // BroadcastMessage send message to all downstream nodes and seed node
 func (p *Peer) SendSingleMessage(msg protocol.Message){
-	p.singleQueue <- &RequestInfo{
+	req := &RequestInfo{
 		Data:msg,
 		FromAddr:msg.GetFromAddr(),
 	}
+	p.singleQueue <- req
 }
 
 // BroadcastMessage send message to all downstream nodes and seed node

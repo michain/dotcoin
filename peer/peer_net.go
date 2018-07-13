@@ -1,15 +1,15 @@
 package peer
 
 import (
-	"encoding/gob"
 	"net"
-	"bytes"
 	"github.com/michain/dotcoin/connx"
-	"fmt"
+	"bytes"
+	"encoding/gob"
 )
 
 // WriteConnRequest write request data to conn
-func WriteConnRequest(conn net.Conn, r interface{}) error{
+func WriteConnRequest(conn net.Conn, r Request) error{
+
 	var encoded bytes.Buffer
 	enc := gob.NewEncoder(&encoded)
 	err := enc.Encode(r)
@@ -28,9 +28,6 @@ func ReadConnRequest(conn net.Conn) (*Request, error){
 	r := Request{}
 	decoder := gob.NewDecoder(bytes.NewReader(data))
 	err = decoder.Decode(&r)
-	if err == nil{
-		fmt.Println("ReadConnRequest", r.Command, r.From)
-	}
 	return &r, err
 }
 

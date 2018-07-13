@@ -6,7 +6,8 @@
 * Update: update enabled empty txs when new block mining
 * Update: log add Time field
 * Update: remove proof package, add mining package
-* 2018-07-13 10:00
+* BugFixed: gob encoding lost some field
+* 2018-07-13 17:00
 
 ## Version 0.1.8
 * New Feature: add ChainIndex to storage block index in db and runtime
