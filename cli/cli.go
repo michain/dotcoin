@@ -28,7 +28,7 @@ func (cli *CLI) printUsage() {
 	fmt.Println("  getbalance -address ADDRESS - Get balance of ADDRESS")
 	fmt.Println("  listaddresses - Lists all addresses from the wallet file")
 	fmt.Println("  printchain - Print all the blocks of the blockchain")
-	fmt.Println("  startnode -nodeid NodeID -miner ADDRESS -isgenesis IsGenesis  - - Start a node with ID specified in NODE_ID env. var. -miner enables mining")
+	fmt.Println("  startnode -nodeid NodeID -ismining IsMining -miner ADDRESS -isgenesis IsGenesis  - - Start a node with ID specified in NODE_ID env. var. -ismining enables mining")
 }
 
 func (cli *CLI) validateArgs() {
@@ -50,7 +50,8 @@ func (cli *CLI) Run() {
 	startNodeCmd := flag.NewFlagSet(cmdStartNode, flag.ExitOnError)
 
 	getBalanceAddress := getBalanceCmd.String("address", "", "The address to get balance for")
-	startNodeMiner := startNodeCmd.String("miner", "", "Enable mining mode and send reward to ADDRESS")
+	startNodeMiner := startNodeCmd.String("miner", "", "set send reward to ADDRESS")
+	startNodeIsMining := startNodeCmd.Bool("ismining", false, "Enable mining mode")
 	startNodeIsGenesis := startNodeCmd.Bool("isgenesis", false, "Set is isGenesis Mode")
 	startNodeListen := startNodeCmd.String("listen", "", "Set listen addr")
 	startNodeSeed := startNodeCmd.String("seed", "", "Set seed addr")
@@ -67,9 +68,12 @@ func (cli *CLI) Run() {
 	args := os.Args[3:]
 	switch command {
 	case cmdVersion:
-
-	case cmdGetBalance:
 		err := versionCmd.Parse(args)
+		if err != nil {
+			log.Panic(err)
+		}
+	case cmdGetBalance:
+		err := getBalanceCmd.Parse(args)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -126,6 +130,6 @@ func (cli *CLI) Run() {
 	}
 
 	if startNodeCmd.Parsed() {
-		cli.startNode(nodeID, *startNodeMiner, *startNodeIsGenesis, *startNodeListen, *startNodeSeed)
+		cli.startNode(nodeID, *startNodeIsMining, *startNodeMiner, *startNodeIsGenesis, *startNodeListen, *startNodeSeed)
 	}
 }

@@ -43,7 +43,7 @@ func newChainIndex(db *bolt.DB, index *blockIndex) *ChainIndex {
 //
 // This function is NOT safe for concurrent access.
 func (bi *ChainIndex) addIndex(index *blockIndex) {
-	bi.hashIndexes[index.hash] = index
+	bi.hashIndexes[index.Hash] = index
 }
 
 
@@ -71,7 +71,7 @@ func (bi *ChainIndex) setTip(index *blockIndex) {
 
 	// Create or resize the slice that will hold the block indexes to the
 	// provided tip height.
-	needed := index.height + 1
+	needed := index.Height + 1
 	if int32(cap(bi.indexes)) < needed {
 		nodes := make([]*blockIndex, needed, needed+approxNodesPerWeek)
 		copy(nodes, bi.indexes)
@@ -84,9 +84,9 @@ func (bi *ChainIndex) setTip(index *blockIndex) {
 		}
 	}
 
-	for index != nil && bi.indexes[index.height] != index {
-		bi.indexes[index.height] = index
-		index = index.parent
+	for index != nil && bi.indexes[index.Height] != index {
+		bi.indexes[index.Height] = index
+		index = index.Parent
 	}
 }
 
@@ -195,7 +195,7 @@ func (bi *ChainIndex) flushToDB() error {
 
 	//TODO need transaction all save
 	for index := range bi.dirtyIndexes {
-		key := blockIndexKey(&index.hash, uint32(index.height))
+		key := blockIndexKey(&index.Hash, uint32(index.Height))
 		storage.SaveBlockIndex(bi.db, key, SerializeBlockIndex(index))
 	}
 
@@ -219,20 +219,20 @@ func blockIndexKey(blockHash *hashx.Hash, blockHeight uint32) []byte {
 
 type blockIndex struct{
 	// parent is the parent block for this index.
-	parent *blockIndex
+	Parent *blockIndex
 	// hash is the double sha 256 of the block.
-	hash hashx.Hash
+	Hash hashx.Hash
 
 	// workSum is the total amount of work in the chain up to and including
 	// this node.
-	workSum *big.Int
+	WorkSum *big.Int
 	// height is the position in the block chain.
-	height int32
+	Height int32
 
-	difficult       uint32
-	nonce      int64
-	timestamp  int64
-	merkleRoot []byte
+	Difficult       uint32
+	Nonce      int64
+	Timestamp  int64
+	MerkleRoot []byte
 }
 
 // newBlockIndex returns a new block index for the given block and parent index
@@ -241,17 +241,17 @@ type blockIndex struct{
 // This function is NOT safe for concurrent access.
 func newBlockIndex(block *Block, parent *blockIndex) *blockIndex {
 	index := blockIndex{
-		hash:       *block.GetHash(),
-		workSum:    CalcWork(block.Difficult),
-		difficult:  block.Difficult,
-		nonce:      block.Nonce,
-		timestamp:  block.Timestamp.Unix(),
-		merkleRoot: block.MerkleRoot,
+		Hash:       *block.GetHash(),
+		WorkSum:    CalcWork(block.Difficult),
+		Difficult:  block.Difficult,
+		Nonce:      block.Nonce,
+		Timestamp:  block.Timestamp.Unix(),
+		MerkleRoot: block.MerkleRoot,
 	}
 	if parent != nil {
-		index.parent = parent
-		index.height = parent.height + 1
-		index.workSum = index.workSum.Add(parent.workSum, index.workSum)
+		index.Parent = parent
+		index.Height = parent.Height + 1
+		index.WorkSum = index.WorkSum.Add(parent.WorkSum, index.WorkSum)
 	}
 	return &index
 }

@@ -1,54 +1,61 @@
 package logx
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 func Trace(i ...interface{}) {
-	fmt.Println("TRACE ", i[0:])
+	fmt.Println(getLogTime() + " TRACE ", i[0:])
 }
 
 
 func Tracef(format string, i ...interface{}) {
-	fmt.Println("TRACE ", fmt.Sprintf(format, i...))
+	fmt.Println(getLogTime() + " TRACE ", fmt.Sprintf(format, i...))
 }
 
 
 func DevDebugf(format string, i ...interface{}) {
-	fmt.Println("DevDEBUG ", fmt.Sprintf(format, i...))
+	fmt.Println(getLogTime() + " DevDEBUG ", fmt.Sprintf(format, i...))
 }
 
 func DevPrintf(format string, i ...interface{}) {
-	fmt.Println("DevPrint ", fmt.Sprintf(format, i...))
+	fmt.Println(getLogTime() + " DevPrint ", fmt.Sprintf(format, i...))
 }
 
 func Debugf(format string, i ...interface{}) {
-	fmt.Println("DEBUG ", fmt.Sprintf(format, i...))
+	fmt.Println(getLogTime() + " DEBUG ", fmt.Sprintf(format, i...))
 }
 
 
 func Debug(i ...interface{}) {
-	fmt.Println("DEBUG ", fmt.Sprint(i...))
+	fmt.Println(getLogTime() + " DEBUG ", fmt.Sprint(i...))
 }
 
 func Info(i ...interface{}) {
-	fmt.Println("INFO ", fmt.Sprint(i...))
+	fmt.Println(getLogTime() + " INFO ", fmt.Sprint(i...))
 }
 
 func Infof(format string, i ...interface{}){
-	fmt.Println("INFO ", fmt.Sprintf(format, i...))
+	fmt.Println(getLogTime() + " INFO ", fmt.Sprintf(format, i...))
 }
 
 func Warn(i ...interface{}){
-	fmt.Println("WARN ", fmt.Sprint(i...))
+	fmt.Println(getLogTime() + " WARN ", fmt.Sprint(i...))
 }
 
 func Warnf(format string, i ...interface{}){
-	fmt.Println("WARN ", fmt.Sprintf(format, i...))
+	fmt.Println(getLogTime() + " WARN ", fmt.Sprintf(format, i...))
 }
 
 func Error(i ...interface{}){
-	fmt.Println("ERROR ", fmt.Sprint(i...))
+	fmt.Println(getLogTime() + " ERROR ", fmt.Sprint(i...))
 }
 
 func Errorf(format string, i ...interface{}){
-	fmt.Println("ERROR ", fmt.Sprintf(format, i...))
+	fmt.Println(getLogTime() + " ERROR ", fmt.Sprintf(format, i...))
+}
+
+func getLogTime() string{
+	return time.Now().Format("2006-01-02 15:04:05")
 }

@@ -7,6 +7,12 @@ import (
 	"github.com/michain/dotcoin/logx"
 )
 
+const(
+	MinimumTxInNewBlock = 1
+	ZeroTxInNewBlock = 0
+)
+
+
 func (s *Server) LoopMining(){
 	for{
 		runMining(s)
@@ -17,7 +23,12 @@ func (s *Server) LoopMining(){
 // RunMining run mine block with mempool
 func runMining(s *Server) (*chain.Block, error){
 	var newBlock *chain.Block
-	if s.TXMemPool.Count() >= 1 && len(s.minerAddress) > 0 {
+
+	minimumTxCount := MinimumTxInNewBlock
+	if s.Config.EnabledEmptyTxInNewBlock{
+		minimumTxCount = ZeroTxInNewBlock
+	}
+	if s.TXMemPool.Count() >= minimumTxCount && len(s.minerAddress) > 0 {
 		var txs []*chain.Transaction
 
 		//reward miningAddress in this node
@@ -30,7 +41,7 @@ func runMining(s *Server) (*chain.Block, error){
 			}
 		}
 
-		if len(txs) == 0 {
+		if minimumTxCount != ZeroTxInNewBlock && len(txs) == 0 {
 			//TODO log err info
 			return nil, ErrorAllTXInvalid
 		}
@@ -46,7 +57,7 @@ func runMining(s *Server) (*chain.Block, error){
 
 			s.BlockChain.GetUTXOSet().Rebuild()
 
-			logx.Info("MineBlock Success", "hash:", string(newBlock.Hash), "prevhash:", string(newBlock.PrevBlockHash), "txs:", len(newBlock.Transactions))
+			logx.Info("MineBlock Success", " hash: ", newBlock.GetHash().String(), " reward: ", coinbaseReward, " txs: ", len(newBlock.Transactions))
 
 			for _, tx := range txs {
 				if !tx.IsCoinBase() {
@@ -62,7 +73,7 @@ func runMining(s *Server) (*chain.Block, error){
 			msgSend.AddInvInfo(inv)
 			s.Peer.BroadcastMessage(msgSend)
 			logx.Debugf("Server Mining Broadcast block [%v] inv message", hash.String())
-					}
+		}
 	}else{
 		logx.Tracef("MineBlock failde: no tx to mine")
 	}

@@ -209,10 +209,8 @@ func NewCoinbaseTX(to, data string, reward int) *Transaction {
 	if data == ""{
 		data = util.GetRandData()
 	}
-	fmt.Println("NewCoinbaseTX RandData", data)
 	txin := NewTXInput(NewOutPoint(hashx.ZeroHash(), -1), nil, []byte(data))
 	txout := NewTXOutput(reward, to)
-	fmt.Println(txout)
 	tx := Transaction{*hashx.ZeroHash(), []TXInput{*txin}, []TXOutput{*txout}}
 
 	tx.ID = tx.CalcHash()

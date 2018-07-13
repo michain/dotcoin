@@ -6,7 +6,7 @@ import (
 	"encoding/gob"
 	"log"
 	"github.com/michain/dotcoin/merkle"
-	"github.com/michain/dotcoin/proof"
+	"github.com/michain/dotcoin/mining"
 	"fmt"
 	"strings"
 	"github.com/michain/dotcoin/util/hashx"
@@ -91,10 +91,13 @@ func NewBlock(transactions []*Transaction, prevBlockHash []byte, height int32, q
 
 	isSolve := false
 	if height > genesisBlockHeight{
-		pow := proof.NewProofOfWork()
+		pow := mining.NewProofOfWork()
 		isSolve = pow.SolveHash(prevBlockHash, merkleRoot, quit)
 		block.Nonce = pow.Nonce
 		block.Hash = pow.Hash[:]
+	}else{
+		block.Nonce = 0
+		block.Hash = hashx.ZeroHash().CloneBytes()
 	}
 	return block, isSolve
 }

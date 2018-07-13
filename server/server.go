@@ -44,6 +44,18 @@ func init(){
 	curServer = new(Server)
 }
 
+type ServerConfig struct{
+	EnabledMining bool //set enabled run mining
+	EnabledEmptyTxInNewBlock bool //set enabled empty txs when new block mining
+}
+
+func defaultServerConfig() *ServerConfig{
+	return &ServerConfig{
+		EnabledEmptyTxInNewBlock:true,
+		EnabledMining :true,
+	}
+}
+
 type Server struct{
 	NodeID string
 	ListenAddress string
@@ -55,6 +67,7 @@ type Server struct{
 	SyncManager *sync.SyncManager
 	Peer *peer.Peer
 	IsGenesisNode bool
+	Config *ServerConfig
 	minerAddress string
 
 }
@@ -97,7 +110,7 @@ func (s *Server) listenPeer(){
 }
 
 // initServer init server
-func initServer(nodeID, minerAddr string, listenAddr, seedAddr string, isGenesisNode bool) (*Server, error){
+func initServer(nodeID string, isMining bool, minerAddr string, listenAddr, seedAddr string, isGenesisNode bool) (*Server, error){
 	fmt.Println("------------------------------------------------------------------")
 	fmt.Println("[InitServer] Begin node server:", nodeID)
 	serv := new(Server)
@@ -197,6 +210,10 @@ func initServer(nodeID, minerAddr string, listenAddr, seedAddr string, isGenesis
 		return nil, err
 	}
 
+	//init server config
+	serv.Config = defaultServerConfig()
+	serv.Config.EnabledMining = isMining
+
 	//TODO:save to db?
 
 	return serv, nil
@@ -204,9 +221,9 @@ func initServer(nodeID, minerAddr string, listenAddr, seedAddr string, isGenesis
 
 
 // StartServer starts a node
-func StartServer(nodeID, minerAddr string, listenAddr, seedAddr string, isGenesisNode bool) error{
+func StartServer(nodeID string, isMining bool, minerAddr string, listenAddr, seedAddr string, isGenesisNode bool) error{
 
-	serv, err := initServer(nodeID, minerAddr, listenAddr, seedAddr, isGenesisNode)
+	serv, err := initServer(nodeID, isMining, minerAddr, listenAddr, seedAddr, isGenesisNode)
 	if err != nil{
 		return err
 	}
@@ -239,10 +256,12 @@ func StartServer(nodeID, minerAddr string, listenAddr, seedAddr string, isGenesi
 		}()
 	}
 
-	go func(){
-		time.Sleep(time.Minute)
-		serv.LoopMining()
-	}()
+	if curServer.Config.EnabledMining {
+		go func() {
+			time.Sleep(time.Minute)
+			serv.LoopMining()
+		}()
+	}
 
 	serv.listenRPCServer()
 
