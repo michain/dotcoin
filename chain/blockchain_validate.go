@@ -6,6 +6,11 @@ import (
 	"bytes"
 )
 
+const(
+	MaxBlockTransactions = 100000
+	MaxBlockSerializedSize = 2000000
+)
+
 // ValidateBlock validate block data
 func (bc *Blockchain)ValidateBlock(block *Block, powLimit *big.Int) error {
 	//TODO: check ProofOfWork
@@ -19,11 +24,15 @@ func (bc *Blockchain)ValidateBlock(block *Block, powLimit *big.Int) error {
 	}
 
 	// check max block payload is bigger than limit.
-	if numTx > MaxBlockBaseSize {
+	if numTx > MaxBlockTransactions {
 		return ErrBlockTooManyTransactions
 	}
 
-	//TODO check max block's byte size
+	//check max block's serialized size
+	serializedSize := len(SerializeBlock(block))
+	if serializedSize > MaxBlockSerializedSize{
+		return ErrBlockSizeTooBig
+	}
 
 	// The first transaction in a block must be a coinbase.
 	transactions := block.Transactions
