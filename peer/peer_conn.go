@@ -30,7 +30,7 @@ func (r *Request) handleConn(node *Node, conn net.Conn) (string, error) {
 		// delete the message from resend queue
 		deleteResend(r.ID, r.From)
 	case SendRequest:
-		logx.Tracef("peer.handleConn.SendRequest [%v] => [%v] %v", r.From, node.listenAddr, *r)
+		logx.Tracef("peer.handleConn.SendRequest [%v] => [%v]", r.From, node.listenAddr)
 		// send to the outer application
 		node.recv <- r
 		//send ack message
@@ -51,7 +51,7 @@ func (r *Request) handleConn(node *Node, conn net.Conn) (string, error) {
 			}
 		}
 
-		WriteConnRequest(conn, Request{
+		WriteConnRequest(conn, &Request{
 			Command: BackupSeeds,
 			Data:    addrs,
 		})

@@ -307,7 +307,7 @@ func (node *Node) syncBackupSeed() {
 	go func() {
 		for {
 			if node.seedConn != nil {
-				r := &Request{
+				r := Request{
 					Command: SyncBackupSeeds,
 					Data:    node.listenAddr,
 				}
@@ -339,7 +339,7 @@ func (node *Node) loopPing() {
 		}
 
 		if node.seedConn != nil {
-			r := &Request{
+			r := Request{
 				Command: ServerPing,
 				Data:    node.listenAddr,
 				From:	 node.listenAddr,

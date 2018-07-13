@@ -5,6 +5,7 @@ import (
 	"net"
 	"bytes"
 	"github.com/michain/dotcoin/connx"
+	"fmt"
 )
 
 // WriteConnRequest write request data to conn
@@ -24,10 +25,13 @@ func ReadConnRequest(conn net.Conn) (*Request, error){
 	if err !=nil{
 		return nil, err
 	}
-	r := &Request{}
+	r := Request{}
 	decoder := gob.NewDecoder(bytes.NewReader(data))
-	err = decoder.Decode(r)
-	return r, err
+	err = decoder.Decode(&r)
+	if err == nil{
+		fmt.Println("ReadConnRequest", r.Command, r.From)
+	}
+	return &r, err
 }
 
 

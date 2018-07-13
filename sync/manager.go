@@ -58,13 +58,12 @@ func (manager *SyncManager) haveInventory(inv *protocol.InvInfo) (bool, error) {
 	case protocol.InvTypeBlock:
 		return manager.chain.HaveBlock(&inv.Hash)
 	case protocol.InvTypeTx:
-		//check tx-mempool
+		//Check if the transaction exists from Mempool
 		if manager.txMemPool.HaveTransaction(inv.Hash.String()) {
 			return true, nil
 		}
 
-		// Check if the transaction exists from the point of view of the
-		// end of the main chain.
+		// Check if the transaction exists from the main chain.
 		entry, err := manager.chain.FindTransaction(&inv.Hash)
 		if err != nil {
 			if err == chain.ErrorNotFoundTransaction{

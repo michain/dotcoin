@@ -130,7 +130,7 @@ func (manager *SyncManager) handleMsgVersion(msg *protocol.MsgVersion){
 // handleInvMsg handles inv messages from other node.
 // handle the inventory message and act GetData message
 func (manager *SyncManager) handleMsgInv(msg *protocol.MsgInv) {
-	logx.Debugf("SyncManager:handleInvMsg received message", *msg)
+	logx.Debugf("SyncManager:handleInvMsg received message from:%v inv-len:%v", msg.AddrFrom, len(msg.InvList))
 	if len(msg.InvList) <= 0 {
 		logx.Warnf("SyncManager:handleInvMsg received empty inv list")
 		return
@@ -182,7 +182,7 @@ func (manager *SyncManager) handleMsgInv(msg *protocol.MsgInv) {
 
 	numRequestInvs := 0
 	requestQueue := state.requestInvQueue
-	logx.DevPrintf("handleInvMsg requestQueue %v", requestQueue)
+	logx.DevPrintf("handleInvMsg requestQueue %v", len(requestQueue))
 	// Request GetData command
 	getDataMsg := protocol.NewMsgGetData()
 	getDataMsg.AddrFrom = msg.GetFromAddr()
@@ -199,7 +199,7 @@ func (manager *SyncManager) handleMsgInv(msg *protocol.MsgInv) {
 			}
 		case protocol.InvTypeTx:
 			if _, exists := manager.requestedTxs[iv.Hash]; !exists {
-				manager.requestedBlocks[iv.Hash] = struct{}{}
+				manager.requestedTxs[iv.Hash] = struct{}{}
 				err := getDataMsg.AddInvInfo(iv)
 				if err != nil{
 					break
@@ -215,6 +215,7 @@ func (manager *SyncManager) handleMsgInv(msg *protocol.MsgInv) {
 
 	state.requestInvQueue = []*protocol.InvInfo{}
 	if len(getDataMsg.InvList) > 0 {
+		logx.DevPrintf("handleInvMsg SendSingleMessage remote:%v inv-len:%v", getDataMsg.AddrFrom, len(getDataMsg.InvList))
 		manager.peer.SendSingleMessage(getDataMsg)
 	}
 }
@@ -224,13 +225,13 @@ func (manager *SyncManager) handleMsgGetBlocks(msg *protocol.MsgGetBlocks){
 	logx.Debugf("SyncManager.handleMsgGetBlocks peer:%v msg:%v", manager.peer.GetListenAddr(), *msg)
 	block, err := manager.chain.GetLastBlock()
 	if err != nil{
-		//TODO log get last block err
+		logx.Errorf("SyncManager.handleMsgGetBlocks from:%v GetLastBlock err:%v", msg.AddrFrom, err)
 		return
 	}
 	h := block.GetHash()
 	hashes, err:= manager.chain.GetBlockHashes(h, msg.HashStop, protocol.MaxBlocksPerMsg)
 	if err != nil{
-		//TODO log get block hashes err
+		logx.Errorf("SyncManager.handleMsgGetBlocks from:%v GetBlockHashes HashStop:%v err:%v", msg.AddrFrom, msg.HashStop.String(), err)
 		return
 	}
 

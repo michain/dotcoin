@@ -231,8 +231,6 @@ func StartServer(nodeID string, isMining bool, minerAddr string, listenAddr, see
 	//start peer
 	go serv.listenPeer()
 
-	//start sync loop
-	go serv.SyncManager.StartSync()
 
 	//TODO:check config
 
@@ -262,6 +260,9 @@ func StartServer(nodeID string, isMining bool, minerAddr string, listenAddr, see
 			serv.LoopMining()
 		}()
 	}
+
+	//start sync loop
+	go serv.SyncManager.StartSync()
 
 	serv.listenRPCServer()
 

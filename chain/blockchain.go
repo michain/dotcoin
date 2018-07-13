@@ -496,9 +496,6 @@ func (bc *Blockchain) GetBlockHashes(beginHash *hashx.Hash, stopHash hashx.Hash,
 	getCount := 0
 	for {
 		block := bci.Next()
-
-		fmt.Println("GetBlockHashes", block.GetHash(), hex.EncodeToString(block.Hash), hex.EncodeToString(block.GetHash().CloneBytes()))
-
 		h := block.GetHash()
 
 		if stopHash.IsEqual(h){
