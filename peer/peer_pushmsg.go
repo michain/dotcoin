@@ -36,7 +36,7 @@ func (p *Peer) PushAddrMsg(msg *protocol.MsgAddr) error {
 }
 
 func (p *Peer) PushVersion(msg *protocol.MsgVersion) error{
-	//logx.DevPrintf("Peer.PushVersion %v", msg)
+	logx.DevPrintf("Peer.PushVersion height:%v lastBlock:%v", msg.LastBlockHeight, msg.LastBlockHash)
 	if msg.AddrFrom == ""{
 		msg.AddrFrom = p.GetSeedAddr()
 	}
@@ -45,19 +45,19 @@ func (p *Peer) PushVersion(msg *protocol.MsgVersion) error{
 }
 
 func (p *Peer) PushGetBlocks(msg *protocol.MsgGetBlocks) error{
-	//logx.DevPrintf("Peer.PushGetBlocks peer:%v msg:%v", p.GetListenAddr(), msg)
+	logx.DevPrintf("Peer.PushGetBlocks peer:%v hashStop:%v", p.GetListenAddr(), msg.HashStop)
 	p.SendSingleMessage(msg)
 	return nil
 }
 
 func (p *Peer) PushBlock(msg *protocol.MsgBlock) error{
-	logx.DevPrintf("Peer.PushBlock peer:%v remote:%v msg:%v trans:%d", p.GetListenAddr(), msg.GetFromAddr(), msg.Block.GetHash(), len(msg.Block.Transactions))
+	logx.DevPrintf("Peer.PushBlock remote:%v msg:%v trans:%d", msg.GetFromAddr(), msg.Block.GetHash(), len(msg.Block.Transactions))
 	p.SendSingleMessage(msg)
 	return nil
 }
 
 func (p *Peer) PushTx(msg *protocol.MsgTx) error{
-	logx.DevPrintf("Peer.PushTx peer:%v remote:%v msg:%v", p.GetListenAddr(), msg.GetFromAddr(), msg.Tx.GetHash())
+	logx.DevPrintf("Peer.PushTx remote:%v tx:%v", msg.GetFromAddr(), msg.Tx.GetHash())
 	p.SendSingleMessage(msg)
 	return nil
 }

@@ -35,7 +35,7 @@ func (r *Request) handleConn(node *Node, conn net.Conn) (string, error) {
 		// delete the message from resend queue
 		deleteResend(r.ID, r.From)
 	case SendRequest:
-		logx.Tracef("peer.handleConn.SendRequest [%v] => [%v]", r.From, node.listenAddr)
+		//logx.Tracef("peer.handleConn.SendRequest [%v] => [%v]", r.From, node.listenAddr)
 		// send to the outer application
 		node.recv <- r
 		//send ack message
@@ -112,7 +112,7 @@ func (r *Request) handleConn(node *Node, conn net.Conn) (string, error) {
 
 		logx.Debugf("peer.BackupSeeds source: %s,current：%s,backup：%v,downsteam：%v", node.sourceAddr, node.seedAddr, getSeedAddrs(node.seedBackup), node.downstreamNodes)
 	case ServerPing:
-		logx.DevDebugf("peer.ServerPing [%v] => [%v] %v", r.From, node.listenAddr, *r)
+		//logx.DevDebugf("peer.ServerPing [%v] => [%v] %v", r.From, node.listenAddr, *r)
 		// a downstream node sends its address to its seed node
 		addr, ok := r.Data.(string)
 		if ok {
@@ -137,7 +137,7 @@ func (r *Request) handleConn(node *Node, conn net.Conn) (string, error) {
 		}
 
 	case ServerPong:
-		logx.DevDebugf("peer.seedPingPong [%v] => [%v] %v", r.From, node.listenAddr, *r)
+		//logx.DevDebugf("peer.seedPingPong [%v] => [%v] %v", r.From, node.listenAddr, *r)
 		node.seedPingPong = true
 	default:
 		fmt.Println("unrecognized message type：", r.Command)

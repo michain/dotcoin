@@ -17,31 +17,33 @@ func (manager *SyncManager) HandleMessage(msg protocol.Message){
 func (manager *SyncManager) loopHandle(){
 	for {
 		select {
-		case m := <-manager.msgChan:
-			switch msg := m.(type) {
-			case *protocol.MsgVersion:
-				manager.handleMsgVersion(msg)
-			case *protocol.MsgGetAddr:
-				manager.handleMsgGetAddr(msg)
-			case *protocol.MsgAddr:
-				manager.handleMsgAddr(msg)
-			case *protocol.MsgInv:
-				manager.handleMsgInv(msg)
-			case *protocol.MsgGetBlocks:
-				manager.handleMsgGetBlocks(msg)
-			case *protocol.MsgGetData:
-				manager.handleMsgGetData(msg)
-			case *protocol.MsgBlock:
-				manager.handleMsgBlock(msg)
-			case *protocol.MsgTx:
-				manager.handleMsgTx(msg)
-			default:
-				logx.Warnf("Invalid message type in sync msg chan: %T", msg)
-			}
+			case m := <-manager.msgChan:
+				switch msg := m.(type) {
+				case *protocol.MsgVersion:
+					manager.handleMsgVersion(msg)
+				case *protocol.MsgGetAddr:
+					manager.handleMsgGetAddr(msg)
+				case *protocol.MsgAddr:
+					manager.handleMsgAddr(msg)
+				case *protocol.MsgInv:
+					manager.handleMsgInv(msg)
+				case *protocol.MsgGetBlocks:
+					manager.handleMsgGetBlocks(msg)
+				case *protocol.MsgGetData:
+					manager.handleMsgGetData(msg)
+				case *protocol.MsgBlock:
+					logx.Tracef("loopHandle:recivemsg %v", msg.Command())
+					manager.handleMsgBlock(msg)
+				case *protocol.MsgTx:
+					logx.Tracef("loopHandle:recivemsg %v", msg.Command())
+					manager.handleMsgTx(msg)
+				default:
+					logx.Warnf("Invalid message type in sync msg chan: %T", msg)
+				}
 
-		case <-manager.quitSign:
-			logx.Trace("SyncManager handle message done")
-			return
+			case <-manager.quitSign:
+				logx.Trace("SyncManager handle message done")
+				return
 		}
 	}
 }
@@ -151,7 +153,7 @@ func (manager *SyncManager) handleMsgInv(msg *protocol.MsgInv) {
 		}
 	}
 	//TODO why calc lastBlock?
-	fmt.Println("SyncManager:handleInvMsg", lastBlock)
+	fmt.Sprint("SyncManager:handleInvMsg", lastBlock)
 
 	for _, iv := range invInfos {
 		// Ignore unsupported inventory types.
@@ -184,8 +186,6 @@ func (manager *SyncManager) handleMsgInv(msg *protocol.MsgInv) {
 	}
 
 	numRequestInvs := 0
-	requestQueue := state.requestInvQueue
-	logx.DevPrintf("handleInvMsg requestQueue %v", len(requestQueue))
 	// Request GetData command
 	getDataMsg := protocol.NewMsgGetData()
 	getDataMsg.AddrFrom = msg.GetFromAddr()
@@ -218,7 +218,6 @@ func (manager *SyncManager) handleMsgInv(msg *protocol.MsgInv) {
 
 	state.requestInvQueue = []*protocol.InvInfo{}
 	if len(getDataMsg.InvList) > 0 {
-		logx.DevPrintf("handleInvMsg SendSingleMessage remote:%v inv-len:%v", getDataMsg.AddrFrom, len(getDataMsg.InvList))
 		manager.peer.SendSingleMessage(getDataMsg)
 	}
 }
@@ -250,7 +249,7 @@ func (manager *SyncManager) handleMsgGetBlocks(msg *protocol.MsgGetBlocks){
 
 // handleMsgGetData handles getdata messages from other node.
 func (manager *SyncManager) handleMsgGetData(msg *protocol.MsgGetData){
-	logx.Debugf("SyncManager.handleMsgGetData peer:%v msg:%v", manager.peer.GetListenAddr(), *msg)
+	logx.Debugf("SyncManager.handleMsgGetData peer:%v from:%v inv-len:%v", manager.peer.GetListenAddr(), msg.GetFromAddr(), len(msg.InvList))
 	for _, iv := range msg.InvList {
 		var err error
 		switch iv.Type {
