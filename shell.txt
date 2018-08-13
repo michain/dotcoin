@@ -1,0 +1,9 @@
+./dotcoin.exe 3eb456d086f34118925793496cd20945 startnode -ismining=true -miner=1HCGY3WD5UCFNxQyLodoPvSwhZDUQu3kCn -isgenesis=true -listen="192.168.6.36:2398"
+
+
+getbalance -address=1HCGY3WD5UCFNxQyLodoPvSwhZDUQu3kCn
+
+
+./dotcoin 1eb456d086f34118925793496cd20945 startnode -listen="192.168.8.178:2398" -seed="192.168.6.36:2398"
+
+dotcoin.exe 3eb456d086f34118925793496cd20945 startnode -miner=1HCGY3WD5UCFNxQyLodoPvSwhZDUQu3kCn -isgenesis=true -listen="192.168.6.36:2398"
